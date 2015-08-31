@@ -1,0 +1,76 @@
+[
+    {
+        "type": "job",
+        "id": 1,
+        "formato": "210x227",
+        "baseFile": {
+            "type": "file",
+            "path": "/teste/teste",
+            "name": "teste",
+            "dateUpload": "2015-03-17T18:25:43-05:00",
+            "extension": "pdf",
+            "height": "210",
+            "width ": "270",
+            "anotations": "Veiculacao na primeira pagi",
+            "size": "6mb",
+            "generatedFiles": [
+                "dfdsafdsf",
+                "asdfdsfads",
+                "13d1fsdf"
+            ]
+        },
+        "status": "aberto",
+        "annotations": "dsfsfsadfsadfdsfffffffffffffffffffadsfadsf",
+        "advertisements": [
+            {
+                "type": "advertisement",
+                "ap": "132dsad",
+                "dateDelivery": "2015-03-17T18:25:43-05:00",
+                "datePublication": "2015-03-17T18:25:43-05:00",
+                "checkin": {
+                    "userName": "valter.gomes",
+                    "userID": "fdsfdlçsf5654",
+                    "date": "2015-03-17T18:25:43-05:00",
+                    "status": true
+                },
+                "channel": {
+                    "type": "channel",
+                    "name": "Estadão",
+                    "id": "1",
+                    "contact": {
+                        "type": "contact",
+                        "nome": "teste",
+                        "email": "teste@teste.com.br",
+                        "address": "fdsafdsfdsaf",
+                        "phone": "953603146"
+                    },
+                    "sendMode": "FTP"
+                },
+                "file": {
+                    "type": "file",
+                    "path": "/teste/teste",
+                    "name": "teste",
+                    "dateUpload": "2015-03-17T18:25:43-05:00",
+                    "extension": "pdf",
+                    "height": "210",
+                    "width ": "270",
+                    "anotations": "Veiculacao na primeira pagi",
+                    "size": "6mb"
+                },
+                "status": "modified",
+                "sent": {
+                    "userName": "valter.junior",
+                    "userID": "1231",
+                    "date": "2015-03-17T18:25:43-05:00",
+                    "status": "enviado"
+                },
+                "id": 0,
+                "solicitations": [
+                    "11ds1fd",
+                    "ddsfdsf",
+                    "dsfdsfdsf"
+                ]
+            }
+        ]
+    }
+]

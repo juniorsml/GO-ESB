@@ -1,0 +1,141 @@
+*CAMPAIGN
+
+create campaigns  			- POST /campaigns
+get all campaigns 			- GET  /campaigns
+get campaigns	 			- GET  /campaigns/{id}
+edit campaigns   	 		- GET  /campaigns/{id}
+update campaign				- PUT  /campaigns/{id}
+create history campaigns 	- POST /campaigns/{id}/history
+get history campaigns 		- GET  /campaigns/{id}/history
+disable campaigns        	- PUT  /campaigns/{id}/status
+enable campaigns        	- PUT  /campaigns/{id}/status
+create campaignsFile     	- POST /campaigns/{id}/files
+get campaignsFilesInfo   	- GET  /campaigns/{id}/files
+get campaignsFilesThumbs 	- GET  /campaigns/{id}/files/thumbs
+get campaignsFileInfo    	- GET  /campaigns/{id}/files/{id}
+create campaignsFileInfo    - POST  /campaigns/{id}/files/{id}
+delete campaignsFileInfo    - DELETE /campaigns/{id}/files/{id}
+update campaignsFileInfo    - PUT  /campaigns/{id}/files/{id}
+get campaignFileThumb 	    - GET  /campaigns/{id}/files/{id}/thumb
+create campaignFileThumb 	- POST /campaigns/{id}/files/{id}/thumb
+remove campaignFileThumb 	- DELETE /campaigns/{id}/files/{id}/thumb
+update campaignFileThumb 	- PUT /campaigns/{id}/files/{id}/thumb
+get campaignFileDownload    - GET  /campaigns/{id}/files/{id}/download
+get campaignNotifications   - GET  /campaigns/{id}/notifications
+add campaignNotifications   - POST /campaigns/{id}/notifications
+
+
+*JOB
+
+create job  			- POST /campaigns/{id}/jobs
+get all jobs			- GET  /campaigns/{id}/jobs
+get job		 			- GET  /campaigns/{id}/jobs/{id}
+edit job	   			- GET  /campaigns/{id}/jobs/{id}
+update job              - PUT  /campaigns/{id}/jobs/{id}
+disable job		        - PUT /campaigns/{id}/status/jobs/{id}/status
+enable job              - PUT /campaigns/{id}/status/jobs/{id}/status
+get history job     	- GET  /campaigns/{id}/jobs/{id}/history
+create history job     	- POST  /campaigns/{id}/jobs/{id}/history
+get jobBaseFileInfo     - GET  /campaigns/{id}/jobs/{id}/file
+create jobBaseFileInfo  - GET  /campaigns/{id}/jobs/{id}/file
+delete jobBaseFileInfo  - DELETE  /campaigns/{id}/jobs/{id}/file
+update jobBaseFileInfo  - PUT  /campaigns/{id}/jobs/{id}/file
+get jobBaseFileStream   - GET  /campaigns/{id}/jobs/{id}/file/download
+get jobsFileThumb   	- GET  /campaigns/{id}/jobs/{id}/file/{id}/thumb
+get jobNotifications    - GET  /campaigns/{id}/jobs/{id}/notifications
+add jobNotifications    - POST  /campaigns/{id}/jobs/{id}/notifications
+
+
+*ADVERTISEMENT
+
+create advertisement    	- POST  /campaigns/{id}/jobs/{id}/ads
+get all advertisements  	- GET   /campaigns/{id}/jobs/{id}/ads
+get advertisement			- GET	/campaigns/{id}/jobs/{id}/ads/{id}
+edit advertisement			- GET	/campaigns/{id}/jobs/{id}/ads/{id}
+update advertisement		- PUT	/campaigns/{id}/jobs/{id}/ads/{id}
+check-in advertisement		- POST  /campaigns/{id}/jobs/{id}/ads/{id}/checkin
+get ads history         	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/history
+create ads history      	- POST  /campaigns/{id}/jobs/{id}/ads/{id}/history
+create adFileInfo          	- POST   /campaigns/{id}/jobs/{id}/ads/{id}/file
+update adFileInfo          	- PUT   /campaigns/{id}/jobs/{id}/ads/{id}/file
+get adFileInfo          	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/file
+remove adFileInfo          	- DELETE   /campaigns/{id}/jobs/{id}/ads/{id}/file
+get adFileStream        	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/file/download
+get adFileThumb   	    	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/file/{id}/thumb
+disable ads					- PUT  /campaigns/{id}/jobs/{id}/ads/{id}/status
+enable ads					- PUT  /campaigns/{id}/jobs/{id}/ads/{id}/status
+confirm ads 				- PUT  /campaigns/{id}/jobs/{id}/ads/{id}/status
+get ads solicitations   	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/solicitations
+create ads solicitations	- POST   /campaigns/{id}/jobs/{id}/ads/{id}/solicitations
+get ads channel         	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/channel
+update ads channel     		- PUT   /campaigns/{id}/jobs/{id}/ads/{id}/channel
+create ads channel          - POST   /campaigns/{id}/jobs/{id}/ads/{id}/channel
+remove ads channel          - DELETE   /campaigns/{id}/jobs/{id}/ads/{id}/channel
+get ads dispatch        	- GET   /campaigns/{id}/jobs/{id}/ads/{id}/dispatch
+update ads dispatch     	- PUT   /campaigns/{id}/jobs/{id}/ads/{id}/dispatch
+get adNotifications     	- GET  /campaigns/{id}/jobs/{id}/ads/{id}/notifications
+add adNotifications     	- POST  /campaigns/{id}/jobs/{id}/ads/{id}/notifications
+
+
+*USER
+
+create user 	- POST /users
+get users   	- GET  /users
+get user    	- GET  /user/{id}
+update user     - PUT  /user/{id}
+disable user    - PUT  /user/{id}/status
+enable user     - PUT  /user/{id}/status
+
+
+*CUSTOMER
+
+create customer		- POST /customers
+get customers       - GET  /customers
+get customer        - GET  /customers/{id}
+delete customer   	- DELETE  /customer/{id}
+update customer     - PUT /customer/{id}
+
+
+*AGENCY
+
+create agency 	  - POST /agencies
+get agency   	  - GET  /agencies
+get agency    	  - GET  /agencies/{id}
+update agency     - PUT  /agencies/{id}
+disable agency    - PUT  /agencies/{id}/status
+enable agency     - PUT  /agencies/{id}/status
+	
+*NOTIFICATIONS
+
+create notifications  - POST /notifications
+get notifications     - GET  /notifications
+get notification	  - GET  /notifications/{id}
+
+
+*SOLICITATIONS
+
+create solicitations  - POST /solicitations
+get solicitations     - GET  /solicitations
+get solicitations	  - GET  /solicitations/{id}
+
+*HISTORY
+create solicitations  - POST /solicitations
+get solicitations     - GET  /solicitations
+get solicitations	  - GET  /solicitations/{id}
+
+
+*LOGIN
+log in -  POST /login
+log off -  DELETE /login
+
+
+
+*CHANNEL
+
+get channels - GET /channels
+
+
+
+
+
+

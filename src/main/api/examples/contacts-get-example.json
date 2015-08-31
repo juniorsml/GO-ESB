@@ -1,0 +1,26 @@
+[
+	{
+		"id":12345, 
+		"channel": "Vogue",
+		"e-mail": "jpribeiro@vogue.br", 
+		"phone": "011-1234-5678", 
+		"address": "Rua Tut—ia, 1157 04007-900 - S‹o Paulo",
+		"personsName": "Jo‹o Pedro Ribeiro"
+	},
+	{
+		"id":54321, 
+		"channel": "Vogue",
+		"e-mail": "diego.barco@vogue.br", 
+		"phone": "011-1234-5678", 
+		"address": "Av. Paulista, 5000 04014-700 - S‹o Paulo",
+		"personsName": "Diego Barco"
+	},
+	{
+		"id":12345, 
+		"channel": "Glamour",
+		"e-mail": "daponte@glamour.br", 
+		"phone": "011-1234-5678", 
+		"address": "Av. Rio Branco, 188 04001-100 - S‹o Paulo",
+		"personsName": "Daniel Aponte"
+	}
+]

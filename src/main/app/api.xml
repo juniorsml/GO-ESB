@@ -1,0 +1,3005 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ws="http://www.mulesoft.org/schema/mule/ws" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:spring-security="http://www.mulesoft.org/schema/mule/spring-security"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/current/mule-ajax.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd"
+	version="CE-3.6.1">
+
+	<http:listener-config name="api-httpListenerConfig"
+		host="localhost" port="8081" doc:name="HTTP Listener Configuration" />
+
+	<apikit:config name="api-config" raml="api.raml"
+		consoleEnabled="false" consolePath="console" doc:name="Router" />
+
+	<http:request-config name="campaign" host="localhost"
+		port="5984" doc:name="HTTP Request Configuration">
+		<http:digest-authentication username="valterjnr"
+			password="13062014a" />
+	</http:request-config>
+	<custom-transformer class="java.util.HashMap" name="Groups"
+		doc:name="Java" />
+	<file:connector name="output" outputAppend="true"
+		autoDelete="true" doc:name="File" streaming="true"
+		validateConnections="true" />
+	<http:request-config name="API_Local" host="localhost"
+		port="8081" doc:name="HTTP Request Configuration" />
+	<ws:consumer-config name="GoLoginService"
+		wsdlLocation="https://go.visto-web.com.br/services/LoginService?wsdl"
+		service="LoginService" port="LoginServiceHttpPort"
+		serviceAddress="http://go.visto-web.com.br/services/LoginService"
+		doc:name="Web Service Consumer" />
+	<db:generic-config name="Generic_Database_Configuration"
+		url="jdbc:sqlserver://192.168.0.7\SQLEXPRESS:1433;database=visto_go;user=qyarizona;password=consultas"
+		driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		doc:name="Generic Database Configuration" />
+	<db:generic-config name="Generic_Database_Configuration1"
+		url="jdbc:sqlserver:192.168.0.7;databaseName=visto_go;user=qyarizona;password=consultas;integratedSecurity=true"
+		driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		doc:name="Generic Database Configuration" />
+	<spring:beans>
+		<spring:import resource="application-context.xml" />
+
+		<spring:bean id="channelMap" class="java.util.concurrent.ConcurrentHashMap" />
+
+		<spring:bean
+			class="br.com.arizona.custom_authentication_provider.CustomAuthenticationProvider" 
+			id="customAuthenticationProvider" />
+
+		<security:authentication-manager
+			alias="secAuthSample">
+			<security:authentication-provider
+				ref="customAuthenticationProvider" />
+		</security:authentication-manager>
+	</spring:beans>
+	<cxf:configuration name="CXF_Configuration"
+		enableMuleSoapHeaders="true" initializeStaticBusInstance="true"
+		doc:name="CXF Configuration" />
+
+	<spring-security:security-manager>
+		<spring-security:delegate-security-provider
+			name="memory-provider" delegate-ref="secAuthSample" />
+	</spring-security:security-manager>
+
+
+	<apikit:mapping-exception-strategy
+		name="api-apiKitGlobalExceptionMapping">
+		<apikit:mapping statusCode="403">
+			<apikit:exception value="org.mule.api.security.UnauthorisedException" />
+
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload value="{ &quot;message&quot;: &quot;Access denied&quot; }"
+				doc:name="Set Payload" />
+		</apikit:mapping>
+		<apikit:mapping statusCode="404">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.NotFoundException" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload
+				value="{ &quot;message&quot;: &quot;Resource not found&quot; }"
+				doc:name="Set Payload" />
+		</apikit:mapping>
+		<apikit:mapping statusCode="405">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload
+				value="{ &quot;message&quot;: &quot;Method not allowed&quot; }"
+				doc:name="Set Payload" />
+		</apikit:mapping>
+		<apikit:mapping statusCode="415">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload
+				value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }"
+				doc:name="Set Payload" />
+		</apikit:mapping>
+		<apikit:mapping statusCode="406">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.NotAcceptableException" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }"
+				doc:name="Set Payload" />
+		</apikit:mapping>
+		<apikit:mapping statusCode="400">
+			<apikit:exception
+				value="org.mule.module.apikit.exception.BadRequestException" />
+			<set-property propertyName="Content-Type" value="application/json"
+				doc:name="Property" />
+			<set-payload value="#[exception.summaryMessage]"
+				doc:name="Set Payload" />
+			<scripting:component doc:name="Groovy">
+				<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder.error(
+    exception : 'Bad Request',
+    description: payload
+    
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+			</scripting:component>
+			<json:object-to-json-transformer
+				doc:name="Object to JSON" />
+		</apikit:mapping>
+	</apikit:mapping-exception-strategy>
+	<flow name="api-main">
+		<http:listener config-ref="api-httpListenerConfig" path="/api/*"
+			doc:name="HTTP" />
+		<spring-security:http-security-filter
+			realm="mule-realm" securityProviders="memory-provider" />
+		<logger message="#[message]" level="INFO" doc:name="Logger" />
+		<apikit:router config-ref="api-config" doc:name="APIkit Router" />
+		<exception-strategy ref="api-apiKitGlobalExceptionMapping"
+			doc:name="Reference Exception Strategy" />
+	</flow>
+	<flow name="post:/login:api-config">
+		<component doc:name="Java">
+			<spring-object bean="userController" />
+		</component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}/ads:api-config">
+		<set-variable variableName="byCampaignIDAndID"
+			value="http://localhost:5984/campaigns/_design/job/_view/byCampaignIDAndID?key=[,#[flowVars['jobId']]"
+			doc:name="byCampaignIDAndID" />
+        <logger message="KEY: [&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']]]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="false">
+                <logger message="PAGINADO: /campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID?#[message.inboundProperties.'http.query.string']&quot;" level="INFO" doc:name="Logger"/>
+                <http:request config-ref="campaign" path="/campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID?#[message.inboundProperties.'http.query.string']&quot;" method="GET" doc:name="HTTP">
+                    <http:request-builder>
+                        <http:query-param paramName="key" value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']]]"/>
+                    </http:request-builder>
+                </http:request>
+            </when>
+
+            <otherwise>
+                <logger message="DEFAULT: /campaigns/_design/job/_view/byCampaignIDAndID" level="INFO" doc:name="Logger"/>
+                <http:request config-ref="campaign" path="/campaigns/_design/job/_view/byCampaignIDAndID" method="GET" doc:name="HTTP">
+                    <http:request-builder>
+                        <http:query-param paramName="key" value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']]]"/>
+
+
+                    </http:request-builder>
+                </http:request>
+            </otherwise>
+        </choice>
+
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows]" doc:name="Copy_of_Set Payload" />
+		<flow-ref name="getFunctionsAdsHelper" doc:name="getFunctionsAdsHelper" />
+		<scripting:component doc:name="Copy_of_Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def list = [] ;
+for(i = 0 ; i < payload.size(); i++){
+	
+	list << payload.get(i).value;
+
+}
+
+return list]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<sub-flow name="getFunctionsCampaignHelper">
+		<foreach doc:name="For Each">
+			<set-payload value="#[payload.value]" doc:name="Set Payload" />
+			<flow-ref name="getFunctions" doc:name="getFunctions" />
+			<set-payload value="#[payload.jobs]" doc:name="Set Payload" />
+			<foreach doc:name="For Each">
+				<flow-ref name="getFunctions" doc:name="getFunctions" />
+				<set-payload value="#[payload.advertisements]" doc:name="Set Payload" />
+				<foreach doc:name="For Each">
+					<flow-ref name="getFunctions" doc:name="getFunctions" />
+				</foreach>
+			</foreach>
+		</foreach>
+	</sub-flow>
+	<sub-flow name="getFunctionsJobHelper">
+		<foreach doc:name="For Each">
+			<set-payload value="#[payload.value]" doc:name="Set Payload" />
+			<flow-ref name="getFunctions" doc:name="getFunctions" />
+			<set-payload value="#[payload.advertisements]" doc:name="Set Payload" />
+			<foreach doc:name="For Each">
+				<flow-ref name="getFunctions" doc:name="getFunctions" />
+			</foreach>
+		</foreach>
+	</sub-flow>
+	<sub-flow name="getFunctionsAdsHelper">
+		<foreach doc:name="For Each">
+			<set-payload value="#[payload.value]" doc:name="Payload" />
+			<flow-ref name="getFunctions" doc:name="getFunctions" />
+		</foreach>
+	</sub-flow>
+	<flow name="getFunctions" initialState="started"
+		processingStrategy="synchronous">
+
+		<set-variable variableName="modelStatus" value="#[payload.status]"
+			doc:name="modelStatus" />
+		<set-variable variableName="typeModel" value="#[payload.type]"
+			doc:name="typeModel" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="json" />
+		<logger
+			message="PARAMETROS: [&quot;#[flowVars['modelStatus']]&quot;,&quot;#[flowVars['typeModel']]&quot;]"
+			level="INFO" doc:name="Logger" />
+		<logger message="PAYLOAD: #[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/status_model/_design/StatusModel/_view/statusModel" method="GET"
+			doc:name="Copy_of_HTTP">
+			<http:request-builder>
+                <http:query-param paramName="key" value="[&quot;#[flowVars['modelStatus']]&quot;,&quot;#[flowVars['typeModel']]&quot;]"/>
+
+
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+        <logger message="PAYLOAD2: #[payload]" level="INFO" doc:name="Logger"/>
+		<set-variable variableName="functions"
+			value="#[payload.rows[0].value.actions]" doc:name="functions" />
+
+		<logger message="PAYLOAD.ROWS: #[payload.rows[0]]" level="INFO"
+			doc:name="Logger" />
+		<logger message="MESSAGE: #[message]" level="INFO" doc:name="Logger" />
+		<logger message="USER-FUNCTIONS: #[flowVars.userFunctions]"
+			level="INFO" doc:name="Logger" />
+		<set-payload value="#[flowVars.json]" doc:name="Set Payload" />
+		<scripting:transformer doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def restrictedFunctions = []
+functions.each{function->
+	userFunctions.each{userFunction->
+  		if (function == userFunction.id) restrictedFunctions.add(userFunction)
+	}
+}
+
+payload.functions = restrictedFunctions;
+return payload;]]></scripting:script>
+		</scripting:transformer>
+
+	</flow>
+	<flow name="get:/campaigns:api-config">
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="agencyId" />
+		<set-variable variableName="url"
+			value="/campaigns/_design/campaign/_view/byAgencyId?#[message.inboundProperties.'http.query.string']"
+			doc:name="url" />
+		<logger message="#[flowVars.url] key=&quot;#[message.inboundProperties['http.query.params'].get('agencyId')]&quot;" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign" path="#[flowVars.url]"
+			method="GET" doc:name="byAgencyId">
+			<http:request-builder >
+                <http:query-param paramName="key" value="&quot;#[message.inboundProperties['http.query.params'].get('agencyId')]&quot;"/>
+            </http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctionsCampaignHelper" doc:name="getFunctionsCampaignHelper" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def list = [] ;
+for(i = 0 ; i < payload.size(); i++){
+	
+	list << payload.get(i).value;
+
+}
+
+return list]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs:api-config">
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="agencyId" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/job/_view/byCampaignID?#[message.inboundProperties.'http.query.string']"
+			method="GET" doc:name="HTTP no parameter">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<flow-ref name="getFunctionsJobHelper" doc:name="getFunctionsJobHelper" />
+		<logger message="o que e #[payload.getClass()]" level="INFO"
+			doc:name="Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def list = [] ;
+
+for(i = 0 ; i < payload.size(); i++){
+	
+	list << payload.get(i).value;
+
+}
+
+return list]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}:api-config">
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="agencyId" />
+		<logger
+			message="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID" method="GET"
+			doc:name="HTTP no parameter">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<flow-ref name="getFunctionsAdsHelper" doc:name="getFunctionsAdsHelper" />
+		<set-payload value="#[payload[0].value]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}:api-config">
+		<set-payload
+			value="{&#xD;&#xA;&#x9;&quot;id&quot;: 123,&#xD;&#xA;    &quot;name&quot;: &quot;a sample campaign1&quot;,&#xD;&#xA;    &quot;agency&quot;: &quot;Red Chili&quot;,&#xD;&#xA;    &quot;client&quot;: &quot;Nextel&quot;,&#xD;&#xA;    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,&#xD;&#xA;    &quot;status&quot;: &quot;work-in-progress&quot;,&#xD;&#xA;&#x9;&quot;jobs&quot;: []&#xD;&#xA;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctionsCampaignHelper" doc:name="getFunctionsCampaignHelper" />
+		<set-payload value="#[payload[0].value]" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}:api-config">
+		<set-payload
+			value="{&#xD;&#xA;    &quot;id&quot;: 123,&#xD;&#xA;    &quot;name&quot;: &quot;a sample job&quot;,&#xD;&#xA;    &quot;baseFile&quot;, &quot;filePath\fileName0&quot;,&#xD;&#xA;    &quot;advertisements&quot;: [    &#x9;&#x9;&#xD;&#xA;    &#x9;{&#xD;&#xA;&#x9;&#x9;&#x9;&quot;id&quot;:123001, &#xD;&#xA;&#x9;&#x9;&#x9;&quot;channel&quot;:  &quot;Vogue&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&quot;file&quot;: &quot;filePath\fileName1.1&quot;&#xD;&#xA;&#x9;&#x9;},&#xD;&#xA;&#x9;&#x9;{&#xD;&#xA;&#x9;&#x9;&#x9;&quot;id&quot;:123002, &#xD;&#xA;&#x9;&#x9;&#x9;&quot;channel&quot;:  &quot;Glamour&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&quot;file&quot;: &quot;filePath\fileName2.1&quot;&#xD;&#xA;&#x9;&#x9;},    &#xD;&#xA;&#x9;&#x9;{&#xD;&#xA;&#x9;&#x9;&#x9;&quot;id&quot;:123003, &#xD;&#xA;&#x9;&#x9;&#x9;&quot;channel&quot;:  &quot;10&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&quot;file&quot;: &quot;filePath\fileName3.1&quot;&#xD;&#xA;&#x9;&#x9;}      &#xD;&#xA;    ]&#xD;&#xA;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/job/_view/byCampaignIDAndID" method="GET"
+			doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']]]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctionsJobHelper" doc:name="getFunctionsJobHelper" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def obj  ;
+for(i = 0 ; i < payload.size(); i++){
+	
+	obj = payload.get(i).value;
+
+}
+
+return obj;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/baseFile:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="GetMapChannels" initialState="started"
+		processingStrategy="synchronous">
+		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="1"
+				timeUnit="DAYS" />
+			<db:select config-ref="Generic_Database_Configuration"
+				streaming="true" doc:name="Database">
+                <db:dynamic-query><![CDATA[select v.NOME_ICC, v.RESPONSAVEL, v.TELEFONE, v.EMAIL_CONFIRMACAO_FTP, v.ENDERECO , v.CONTATO ,v.ID_TIPO_ENVIO , t.NOME as modo_envio from   VEICULO  v , TIPOENVIO t where t.ID = v.ID_TIPO_ENVIO]]></db:dynamic-query>
+
+			</db:select>
+		</poll>
+		<foreach doc:name="For Each">
+			<json:object-to-json-transformer
+				doc:name="Object to JSON" />
+			<json:json-to-object-transformer
+				returnClass="java.util.HashMap" doc:name="JSON to Object" />
+			<expression-component doc:name="Expression"><![CDATA[#[app.registry.get('channelMap').put(payload.NOME_ICC, payload)]]]></expression-component>
+		</foreach>
+		<logger message="#[app.registry.get('channelMap').keySet()]"
+			level="INFO" doc:name="Logger" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="Variable" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/job/_view/byCampaignIDAndID" method="GET"
+			doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="valter.gomes"
+			doc:name="userName" />
+		<set-variable variableName="userID" value="fdsf5456d4ffdsf46"
+			doc:name="UserID" />
+		<scripting:component doc:name="montaJsonAd">
+			<scripting:script engine="Groovy"><![CDATA[json.solicitations = [] ;
+json.dispatch = [:];
+json.dispatch.date = "";
+json.dispatch.status = "";
+json.dispatch.userID = "";
+json.dispatch.userName = "";
+json.file = [:] ;
+json.file.id = payload.rows[0].value.baseFile;
+def objChannel = muleContext.registry.lookupObject('channelMap').get(json.channel);
+json.channel = [:] ;
+json.channel.contact = [:] ;
+json.channel.contact.type = "contact";
+json.channel.contact.nome = objChannel.RESPONSAVEL ;
+json.channel.contact.email = objChannel.EMAIL_CONFIRMACAO_FTP;
+json.channel.contact.telefone = objChannel.TELEFONE;
+json.channel.contact.endereco = objChannel.ENDERECO;
+json.channel.name = objChannel.NOME_ICC ;
+json.channel.modo_envio = objChannel.modo_envio;
+json.channel.id_tipo_envio = objChannel.ID_TIPO_ENVIO;
+json.channel.type = "channel";
+json.checkin = [:];
+json.checkin.userName = flowVars.userName ;
+json.checkin.userID = flowVars.userID ;
+json.checkin.data = "";
+json.checkin.status = false;
+json.status = "aguardando arquivo";
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-variable variableName="url"
+			value="/campaigns/_design/campaign/_update/addAd/#[flowVars.campaignId]?jobId=#[flowVars.jobId] "
+			doc:name="URL" />
+		<logger
+			message="/campaigns/_design/campaign/_update/addAd/#[flowVars['campaignId']]?jobId=#[flowVars['jobId']]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addAd/#[flowVars['campaignId']]?jobId=#[flowVars['jobId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<choice doc:name="Choice">
+			<when expression="json.file.id != null || json.file.id != &quot;&quot;">
+				<async doc:name="Async">
+					<flow-ref name="uploadFiletoGo" doc:name="uploadFiletoGo" />
+				</async>
+			</when>
+			<otherwise>
+				<logger message="#[payload.getClass()] + #[payload]" level="INFO"
+					doc:name="Logger" />
+			</otherwise>
+		</choice>
+
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="uploadFiletoGo" initialState="started"
+		processingStrategy="asynchronous">
+		<set-variable variableName="createdAdvertisement" value="#[payload]"
+			doc:name="Created Advertisement" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="campaign" value="#[payload]"
+			doc:name="Campaign" />
+		<logger message="#[flowVars.createdAdvertisement]" level="INFO"
+			doc:name="Logger" />
+		<logger message="#[flowVars.campaign]" level="INFO" doc:name="Logger" />
+		<set-payload value="{&quot;status&quot; : &quot;processando&quot;}"
+			doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger
+			message="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]?jobId=#[flowVars['jobId']]&amp;adId=#[flowVars.createdAdvertisement.doc.id]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId"
+					value="#[flowVars.createdAdvertisement.doc.id]" />
+			</http:request-builder>
+		</http:request>
+		<component class="br.go.conections.LoginGoSOAPClientSAAJ"
+			doc:name="Java" />
+		<logger message="depois do https  #[payload.getClass()]  #[payload]"
+			level="INFO" doc:name="Logger" />
+		<set-variable variableName="loginUserId" value="#[payload]"
+			doc:name="loginUserId" />
+		<logger message="login user  = #[flowVars.loginUserId]" level="INFO"
+			doc:name="Logger" />
+		<scripting:component doc:name="GetFileInputStream">
+			<scripting:script engine="Groovy"><![CDATA[def campainId = flowVars.campaign.rows[0].value._id ;
+def index = flowVars.createdAdvertisement.doc.file.id ;
+def filename   = flowVars.campaign.rows[0].value.files[index].name ;
+def root = "c:\\go_images";
+def barra = "\\";
+
+println campainId;
+println index;
+println filename;
+println root;
+println barra;
+
+
+
+println " path do file" + root + barra + campainId + barra + index + barra + "original" + barra + filename ;
+
+
+return new FileInputStream(root + barra + campainId + barra + index + barra + "original" + barra + filename);]]></scripting:script>
+		</scripting:component>
+
+		<http:request config-ref="API_Local"
+			path="/engine/normalizador/jobs/#[flowVars.jobId]" method="POST"
+			doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<set-variable variableName="idNormalizador" value="#[payload]"
+			doc:name="Id Normalizador" />
+		<logger message="esse &#233; o payload do id de retorno #[payload]"
+			level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Monta path de retotno do Normalizador">
+			<scripting:script engine="Groovy"><![CDATA[def adId = flowVars.createdAdvertisement.doc.id ;
+def filename   = flowVars.campaign.rows[0].value.files[flowVars.createdAdvertisement.doc.file.id].name ;
+def main = "C:\\go_images\\" ;
+def file = flowVars.campaignId + "\\jobs\\"+ flowVars.jobId + "\\ads\\" + adId + "\\normalizado\\" ;
+createPath(main,file);
+file = flowVars.campaignId + "\\jobs\\"+ flowVars.jobId + "\\ads\\" + adId + "\\thumb\\" ;
+createPath(main,file);
+
+
+def String createPath(def root , def path){
+	f = new File("$root/$path");
+	f.mkdirs();
+	return "$root/$path" ;
+}]]></scripting:script>
+		</scripting:component>
+		<scripting:component doc:name="Update File com os paths">
+			<scripting:script engine="Groovy"><![CDATA[def adId = flowVars.createdAdvertisement.doc.id ;
+def filename   = flowVars.campaign.rows[0].value.files[flowVars.createdAdvertisement.doc.file.id].name ;
+def host = "campaigns/" ;
+def file = [:];
+file.path = flowVars.campaign.rows[0].value.files[flowVars.createdAdvertisement.doc.file.id].path ;
+file.thumb = host + flowVars.campaignId + "/jobs/"+ flowVars.jobId + "/ads/" + adId +"/file"+ "/thumb/" + filename;
+file.normalizado = host + flowVars.campaignId + "/jobs/"+ flowVars.jobId + "/ads/" + adId + "/file"+ "/normalizado/" + filename;
+def jsonBuilder = new groovy.json.JsonBuilder(file);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<logger message="ESSE &#233; o Json #[payload]" level="INFO"
+			doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/fileAdUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId"
+					value="#[flowVars.createdAdvertisement.doc.id]" />
+			</http:request-builder>
+		</http:request>
+		<scripting:component doc:name="montaJsonNormalizador">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+def adId = flowVars.createdAdvertisement.doc.id ;
+def filename   = flowVars.campaign.rows[0].value.files[flowVars.createdAdvertisement.doc.file.id].name ;
+def root = "C:\\go_images\\" ;
+def path = flowVars.campaignId + "\\jobs\\"+ flowVars.jobId + "\\ads\\" + adId + "\\normalizado\\" ;
+def fullPath = root + path + filename ;
+fullPath = fullPath.replace("\\" , "_");
+jsonBuilder(
+	
+	"_id" : flowVars.idNormalizador ,
+	"fullPath" : fullPath
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign" path="/normalizador_ids"
+			method="POST" doc:name="HTTP" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+	</flow>
+	<flow name="loginGO" initialState="stopped">
+		<poll doc:name="Poll">
+			<scripting:component doc:name="Groovy">
+				<scripting:script engine="Groovy"><![CDATA[list = [];
+list << "arizona.go" ;
+list << "arizona.go" ;
+
+return list;]]></scripting:script>
+			</scripting:component>
+		</poll>
+
+		<logger message="#[payload.getClass()]" level="INFO" doc:name="Logger" />
+		<custom-transformer name="XmlToXSR"
+			class="org.mule.module.xml.transformer.XmlToXMLStreamReader"
+			doc:name="Java" />
+		<logger message="#[payload.getClass()]" level="INFO" doc:name="Logger" />
+
+		<object-to-string-transformer doc:name="Object to String" />
+		<logger message="o usuario retorno e #[payload]" level="INFO"
+			doc:name="Logger" />
+	</flow>
+	<flow name="post:/campaigns:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json = payload ;
+json.type = "campaign" ;
+json.status = "aberto" ;
+json.jobs = [] ;
+json.history = [:];
+json.history.put("campaign" , []);
+json.history.put("jobs" , []);
+json.history.put("advertisement" , []);
+json.notifications = [:];
+json.notifications.put("campaign" , []);
+json.notifications.put("jobs" , []);
+json.notifications.put("advertisement" , []);
+json.files = [] ;
+date = new Date();
+json.createdAt = date.format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ;
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<set-variable variableName="url"
+			value="/campaigns/_design/campaign/_update/addAd/#[flowVars.campaignId]?jobId=#[flowVars.jobId] "
+			doc:name="URL" />
+		<logger
+			message="/campaigns/_design/campaign/_update/addAd/#[flowVars['campaignId']]?jobId=#[flowVars['jobId']]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign" path="/campaigns/"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[payload.id]&quot;" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<flow-ref name="getFunctionsCampaignHelper" doc:name="Copy_of_getFunctionsCampaignHelper" />
+		<set-payload value="#[payload[0].value]" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="post:/campaigns/{campaignId}/jobs:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[payload.status = "aberto";
+payload.advertisements = [] ;
+payload.type = "job" ;
+
+return payload;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<set-variable variableName="url"
+			value="/campaigns/_design/campaign/_update/addAd/#[flowVars.campaignId]?jobId=#[flowVars.jobId] "
+			doc:name="URL" />
+		<logger
+			message="/campaigns/_design/campaign/_update/addAd/#[flowVars['campaignId']]?jobId=#[flowVars['jobId']]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addJob/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow name="get:/go/screen/{screenName}/roles:api-config">
+		<set-variable variableName="profile" value="agency"
+			doc:name="profile" />
+		<http:request config-ref="campaign"
+			path="/screen_profiles/_design/screenProfiles/_view/byNameAndProfile"
+			method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.screenName]&quot;, &quot;#[flowVars.profile]&quot;]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+
+	<flow name="put:/campaigns/{campaignId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/campaignUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="put:/user/{userId}/status:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/users/_design/users/_update/userUpdate/#[flowVars['userId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/dispatch:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="NewGo User"
+			doc:name="userName" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder.dispatch(
+                "userName": userName,
+                "userID": "1231",
+                "date": "2015-03-17T18:25:43-05:00",
+                "status": payload.dispatch
+    
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/channel:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="NewGo User"
+			doc:name="userName" />
+		<logger message="#[payload.sendMode]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[println payload.getClass();
+def json = [:];
+json.channel = [:];
+json.channel.sendMode = payload.sendMode;
+json.channel.contact = [:];
+json.channel.contact.type = "contact";
+json.channel.contact.email = payload.contact.email;
+json.channel.contact.address = payload.contact.address;
+json.channel.contact.phone = payload.contact.phone;
+
+def jsonBuilder = new groovy.json.JsonBuilder(json);
+return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/jobUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/files/{fileId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/fileUpdateCampaign/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="fileId" value="#[flowVars['fileId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload doc:name="Set Payload" value="#[payload.doc]" />
+		<message-properties-transformer
+			doc:name="Message Properties" />
+
+	</flow>
+	<flow name="put:/campaigns/{campaignId}/files/{fileId}/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/files/{fileId}/thumbs:multipart/form-data:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/fileAdUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload doc:name="Set Payload" value="#[payload.doc]" />
+		<message-properties-transformer
+			doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}/thumbs:multipart/form-data:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/status:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/file:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/jobUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/notifications:application/json:api-config">
+		<set-payload
+			value="{&#xD;&#xA;    &quot;campaign&quot;: [&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;: &quot;sadfsdfdsf&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;: &quot;sadfsdfdsf&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ],&#xD;&#xA;    &quot;job&quot;: [&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;   : 0,&#xD;&#xA;            &quot;idObj&quot;: &quot;1&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA; &#x9;&#x9;&#x9;&quot;id&quot;   : 0,&#xD;&#xA;            &quot;idObj&quot;: &quot;2&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ],&#xD;&#xA;    &quot;advertisement&quot;: [&#xD;&#xA;        {&#xD;&#xA;        &#x9;&quot;id&quot;  : 0,&#xD;&#xA;            &quot;idObj&quot;: 0,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;  : 1,&#xD;&#xA;            &quot;idObj&quot;: 1,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ]&#xD;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/status:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/jobUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="put:/campaigns/{campaignId}/status:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/campaignUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<flow-ref name="getFunctions" doc:name="getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="delete:/login:api-config">
+		<set-payload
+			value="{&#xA;  &quot;userName&quot; : &quot;valter.gomes&quot;&#xA;  &quot;status&quot;: &quot;Log out&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="delete:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/channel:api-config">
+		<set-payload
+			value="{&#xA;  &quot;channelName&quot; : &quot;Estadão&quot;,&#xA;  &quot;status&quot;: &quot;removed&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="delete:/campaigns/{campaignId}/files/{fileId}:api-config">
+		<set-payload
+			value="{&#xA;  &quot;fileid&quot;:&quot;1&quot;,&#xA;  &quot;message&quot; : &quot;removed&quot; &#xA; }"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="delete:/campaigns/{campaignId}/files/{fileId}/notifications:api-config">
+		<set-payload
+			value="{&#xA;  &quot;notificationId&quot;: 121 ,&#xA;  &quot;message&quot; : &quot;notification removed&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="delete:/campaigns/{campaignId}/files/{fileId}/thumbs:api-config">
+		<set-payload
+			value="{&#xA;  &quot;fileId&quot;: &quot;1&quot;&#xA;  &quot;status&quot;: &quot;Removed&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="delete:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}:api-config">
+		<set-payload
+			value="{&#xA;  &quot;fileid&quot;:&quot;1&quot;,&#xA;  &quot;message&quot; : &quot;removed&quot; &#xA; }"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="delete:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}/thumbs:api-config">
+		<set-payload
+			value="{&#xA;  &quot;fileId&quot;: &quot;1&quot;&#xA;  &quot;status&quot;: &quot;Removed&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="delete:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/notifications:api-config">
+		<set-payload
+			value="{&#xA;  &quot;notificationId&quot;: 121 ,&#xA;  &quot;message&quot; : &quot;notification removed&quot;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="delete:/go/admin/groups/{idGroup}:api-config">
+		<set-payload value="{&quot;status&quot; : &quot;desativado&quot;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="groups/_design/group/_update/groupUpdate/#[flowVars['idGroup']]"
+			method="POST" doc:name="Copy_of_Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+	</flow>
+	<flow name="delete:/campaigns/{campaignId}/jobs/{jobId}/file:api-config">
+		<set-payload value="{&quot;status&quot; : &quot;desativado&quot;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/go/admin/groups/{idGroup}:api-config">
+		<http:request config-ref="campaign"
+			path="groups/_design/group/_view/byId" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars['idGroup']]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow name="get:/go/admin/groups:api-config">
+		<http:request config-ref="campaign"
+			path="groups/_design/group/_view/byName" method="GET" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[list = [] ;
+for(i = 0 ; i < payload.size(); i++){
+	
+	list << payload.get(i).value;
+
+}
+
+return list;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="put:/go/admin/groups/{idGroup}:application/json:api-config">
+		<http:request config-ref="campaign"
+			path="groups/_design/group/_update/groupUpdate/#[flowVars['idGroup']]"
+			method="POST" doc:name="Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+
+	</flow>
+	<flow name="post:/go/admin/groups:application/json:api-config">
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[payload.type = "group";
+return payload;]]></scripting:script>
+		</scripting:component>
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="Copy_of_Copy_of_json" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Copy_of_Object to JSON" />
+		<http:request config-ref="campaign" path="/groups/"
+			method="POST" doc:name="Copy_of_Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+		<logger message="teste #[payload]" level="INFO"
+			doc:name="Copy_of_Copy_of_Logger" />
+		<scripting:component doc:name="Copy_of_Copy_of_Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json.id = payload.id
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Copy_of_Message Properties" />
+	</flow>
+	<flow name="get:/user:api-config">
+		<http:request config-ref="campaign"
+			path="users/_design/users/_view/byName" method="GET" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[list  = [];
+
+for(i = 0 ; i < payload.size(); i++){
+		list << payload.get(i).value ;
+
+	}
+return list;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="post:/user:application/json:api-config">
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[payload.status = "ativo" ;
+return payload;]]></scripting:script>
+		</scripting:component>
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="json" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="Copy_of_Copy_of_json" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Copy_of_Object to JSON" />
+		<http:request config-ref="campaign" path="/users/"
+			method="POST" doc:name="Copy_of_Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+		<logger message="teste #[payload]" level="INFO"
+			doc:name="Copy_of_Copy_of_Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json.id = payload.id ;
+json.remove('password');
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Copy_of_Message Properties" />
+	</flow>
+	<flow name="put:/user/{userId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/users/_design/users/_update/userUpdate/#[flowVars['userId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/user/{userId}:api-config">
+		<http:request config-ref="campaign" path="users/_design/users/_view/byID"
+			method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars['userId']]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="&quot;#[flowVars['userId']]&quot;" level="INFO"
+			doc:name="Logger" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow name="delete:/user/{userId}:api-config">
+		<set-payload value="{&quot;status&quot; : &quot;desativado&quot;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="users/_design/users/_update/userUpdate/#[flowVars['userId']]"
+			method="POST" doc:name="Copy_of_Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_Copy_of_JSON to Object" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow name="get:/agency/{agencyId}:api-config">
+		<http:request config-ref="campaign"
+			path="agencies/_design/agency/_view/byID" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars['agencyId']]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+
+	<flow name="put:/agency/{agencyId}/status:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/agencies/_design/agency/_update/agencyUpdate/#[flowVars['agencyId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow name="put:/agency/{agencyId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/agencies/_design/agency/_update/agencyUpdate/#[flowVars['agencyId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="put:/agency/{agencyId}/contact:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/agencies/_design/agency/_update/agencyContactUpdate/#[flowVars['agencyId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="delete:/agency/{agencyId}:application/json:api-config">
+		<set-payload value="{&quot;status&quot; : &quot;desativado&quot;}"
+			doc:name="Set Payload" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/agencies/_design/agency/_update/agencyUpdate/#[flowVars['agencyId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/agency:api-config">
+		<http:request config-ref="campaign"
+			path="agencies/_design/agency/_view/byName" method="GET" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[list = [] ;
+for(i = 0 ; i < payload.size(); i++){
+		list << payload.get(i).value ;
+	}
+return list;	
+	]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="post:/agency:application/json:api-config">
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[payload.status = "ativo";
+
+return payload;]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="Copy_of_json" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<http:request config-ref="campaign" path="/agencies/"
+			method="POST" doc:name="Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<scripting:component doc:name="Copy_of_Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json.id = payload.id
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/functions:api-config">
+		<http:request config-ref="campaign"
+			path="functions/_design/function/_view/byName" method="GET" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[list = [] ;
+		for(i = 0 ; i < payload.size(); i++){
+		list << payload.get(i).value ;
+	}
+	return list;	
+	]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="post:/functions:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[payload.status = "ativo";
+
+return payload;]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="Copy_of_json" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<http:request config-ref="campaign" path="/functions/"
+			method="POST" doc:name="Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json.id = payload.id
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow name="get:/functions/{functionId}:api-config">
+		<http:request config-ref="campaign"
+			path="functions/_design/function/_view/byId" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars['functionId']]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow name="put:/functions/{functionId}:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/functions/_design/function/_update/functionUpdate/#[flowVars['functionId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="delete:/functions/{functionId}:application/json:api-config">
+		<set-payload value="{&quot;status&quot; : &quot;desativado&quot;}"
+			doc:name="Set Payload" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/functions/_design/function/_update/functionUpdate/#[flowVars['functionId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow name="get:/channels:api-config">
+		<set-payload value="#[app.registry.get('channelMap').keySet()]"
+			doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+
+	</flow>
+	<flow name="get:/channels/{idChannel}:api-config">
+		<set-payload
+			value="#[app.registry.get('channelMap').get(flowVars.idChannel)]"
+			doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/solicitations:api-config">
+		<logger
+			message="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]"
+			level="INFO" doc:name="Copy_of_Logger" />
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="Copy_of_agencyId" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID" method="GET"
+			doc:name="Copy_of_HTTP no parameter">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<set-payload value="#[payload.rows[0].value.solicitations]"
+			doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow name="get:/customer:api-config">
+		<http:request config-ref="campaign"
+			path="customers/_design/customers/_view/byName" method="GET"
+			doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows]" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/customer/{customerId}:api-config">
+		<http:request config-ref="campaign"
+			path="customers/_design/customers/_view/byID" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars['customerId']]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/dispatch:api-config">
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="agencyId" />
+		<logger
+			message="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID" method="GET"
+			doc:name="HTTP no parameter">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows[0].value.dispatch]"
+			doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/channel:api-config">
+		<set-variable variableName="agencyId"
+			value="#[message.inboundProperties.'http.query.params'.get('agencyId')]"
+			doc:name="agencyId" />
+		<logger
+			message="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID" method="GET"
+			doc:name="HTTP no parameter">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows[0].value.channel]"
+			doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/files:api-config">
+		<set-payload
+			value="{
+	&quot;id&quot;: 123,
+    &quot;name&quot;: &quot;a sample campaign1&quot;,
+    &quot;agency&quot;: &quot;Red Chili&quot;,
+    &quot;client&quot;: &quot;Nextel&quot;,
+    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,
+    &quot;status&quot;: &quot;work-in-progress&quot;,
+	&quot;jobs&quot;: []
+}"
+			doc:name="Copy_of_Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.rows[0].value.files]"
+			doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/files/thumbs:api-config">
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[return new FileInputStream("C:\\go_images\\valter_teste\\raw\\Desert.jpg");]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload.getClass()]" level="INFO" doc:name="Logger" />
+		<flow-ref name="apiFlow" doc:name="apiFlow" />
+	</flow>
+	<flow name="apiFlow">
+		<message-properties-transformer
+			mimeType="image/jpeg" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/files/{fileId}:api-config">
+		<http:request config-ref="campaign"
+			path="campaigns/_design/files/_view/byCampaignIDAndID" method="GET"
+			doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars.fileId]]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-payload value="#[payload.rows[0].value]" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/files/{fileId}/download:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/files/{fileId}/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/history:api-config">
+		<set-payload
+			value="{&#xD;&#xA;&#x9;&quot;id&quot;: 123,&#xD;&#xA;    &quot;name&quot;: &quot;a sample campaign1&quot;,&#xD;&#xA;    &quot;agency&quot;: &quot;Red Chili&quot;,&#xD;&#xA;    &quot;client&quot;: &quot;Nextel&quot;,&#xD;&#xA;    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,&#xD;&#xA;    &quot;status&quot;: &quot;work-in-progress&quot;,&#xD;&#xA;&#x9;&quot;jobs&quot;: []&#xD;&#xA;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows[0].value.history]"
+			doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file:api-config">
+		<set-payload
+			value="{&#x9;&#xD;&#xA;&#x9;&quot;id&quot; : 1,&#xD;&#xA;    &quot;type&quot;: &quot;file&quot;,&#xD;&#xA;    &quot;path&quot;: &quot;/teste/teste&quot;,&#xD;&#xA;    &quot;name&quot;: &quot;teste&quot;,&#xD;&#xA;    &quot;dateUpload&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,&#xD;&#xA;    &quot;extension&quot;: &quot;pdf&quot;,&#xD;&#xA;    &quot;height&quot;: &quot;210&quot;,&#xD;&#xA;    &quot;width &quot;: &quot;270&quot;,&#xD;&#xA;    &quot;anotations&quot;: &quot;Veiculacao na primeira pagi&quot;,&#xD;&#xA;    &quot;size&quot;: &quot;6mb&quot;&#xD;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}:api-config">
+		<set-payload
+			value="{&#x9;&#xD;&#xA;&#x9;&quot;id&quot; : 1,&#xD;&#xA;    &quot;type&quot;: &quot;file&quot;,&#xD;&#xA;    &quot;path&quot;: &quot;/teste/teste&quot;,&#xD;&#xA;    &quot;name&quot;: &quot;teste&quot;,&#xD;&#xA;    &quot;dateUpload&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,&#xD;&#xA;    &quot;extension&quot;: &quot;pdf&quot;,&#xD;&#xA;    &quot;height&quot;: &quot;210&quot;,&#xD;&#xA;    &quot;width &quot;: &quot;270&quot;,&#xD;&#xA;    &quot;anotations&quot;: &quot;Veiculacao na primeira pagi&quot;,&#xD;&#xA;    &quot;size&quot;: &quot;6mb&quot;&#xD;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{fileId}/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/history:api-config">
+		<set-payload
+			value="[&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;{&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;type&quot; : &quot;history&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;userName&quot; : &quot;Valter Gomes&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;date&quot; : &quot;2015-03-17T18:25:43-05:00&quot; ,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;action&quot; : &quot;Date Modified&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;before&quot; : &quot;13/02/2015&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;now&quot; : &quot;20/02/2015&quot;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;},{&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;type&quot; : &quot;history&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;userName&quot; : &quot;Valter Gomes&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;date&quot; : &quot;2015-03-17T18:25:43-05:00&quot; ,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;action&quot; : &quot;Date Modified&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;before&quot; : &quot;13/02/2015&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;now&quot; : &quot;20/02/2015&quot;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#xD;&#xA;&#x9;&#x9;},{&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;type&quot; : &quot;history&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;userName&quot; : &quot;Valter Gomes&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;date&quot; : &quot;2015-03-17T18:25:43-05:00&quot; ,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;action&quot; : &quot;Date Modified&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;before&quot; : &quot;13/02/2015&quot;,&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&quot;now&quot; : &quot;20/02/2015&quot;&#xD;&#xA;&#x9;&#x9;&#x9;&#x9;&#xD;&#xA;&#xD;&#xA;&#x9;&#x9;}&#xD;&#xA;        ]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/notifications:api-config">
+		<set-payload
+			value="{&#xD;&#xA;    &quot;campaign&quot;: [&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;: &quot;sadfsdfdsf&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;: &quot;sadfsdfdsf&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ],&#xD;&#xA;    &quot;job&quot;: [&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;   : 0,&#xD;&#xA;            &quot;idObj&quot;: &quot;1&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA; &#x9;&#x9;&#x9;&quot;id&quot;   : 0,&#xD;&#xA;            &quot;idObj&quot;: &quot;2&quot;,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ],&#xD;&#xA;    &quot;advertisement&quot;: [&#xD;&#xA;        {&#xD;&#xA;        &#x9;&quot;id&quot;  : 0,&#xD;&#xA;            &quot;idObj&quot;: 0,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        },&#xD;&#xA;        {&#xD;&#xA;            &quot;id&quot;  : 1,&#xD;&#xA;            &quot;idObj&quot;: 1,&#xD;&#xA;            &quot;type&quot;: &quot;notification&quot;,&#xD;&#xA;            &quot;name&quot;: &quot;edit name&quot;,&#xD;&#xA;            &quot;date&quot;: &quot;2015-03-17T18:25:43-05:00&quot;&#xD;&#xA;        }&#xD;&#xA;    ]&#xD;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}/file:api-config">
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/job/_view/fileByJobId" method="GET"
+			doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key" value="#[flowVars['jobId']]" />
+
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def retorno  = payload.rows[0].value ;
+
+if(retorno == null){
+	retorno = {} ;
+}
+
+return retorno ;]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload.getClass()]    #[payload]" level="INFO"
+			doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Properties" />
+
+
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/file/download:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}/file/thumb:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/jobs/{jobId}/history:api-config">
+		<set-payload
+			value="{
+	&quot;id&quot;: 123,
+    &quot;name&quot;: &quot;a sample campaign1&quot;,
+    &quot;agency&quot;: &quot;Red Chili&quot;,
+    &quot;client&quot;: &quot;Nextel&quot;,
+    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,
+    &quot;status&quot;: &quot;work-in-progress&quot;,
+	&quot;jobs&quot;: []
+}"
+			doc:name="Copy_of_Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.rows[0].value.history.jobs]"
+			doc:name="Copy_of_Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+
+	</flow>
+	<flow
+		name="get:/campaigns/{campaignId}/jobs/{jobId}/notifications:api-config">
+		<set-payload
+			value="{
+	&quot;id&quot;: 123,
+    &quot;name&quot;: &quot;a sample campaign1&quot;,
+    &quot;agency&quot;: &quot;Red Chili&quot;,
+    &quot;client&quot;: &quot;Nextel&quot;,
+    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,
+    &quot;status&quot;: &quot;work-in-progress&quot;,
+	&quot;jobs&quot;: []
+}"
+			doc:name="Copy_of_Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.rows[0].value.notifications.jobs]"
+			doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/checkin:application/json:api-config">
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="json" />
+		<logger
+			message="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]"
+			level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/ads/_view/byCampaignIDAndJobIDAndID" method="GET"
+			doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="[&quot;#[flowVars.campaignId]&quot;,#[flowVars['jobId']],#[flowVars['adId']]]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Copy_of_Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+
+def obj = payload.rows[0].value;
+def date = new Date();
+def dateF = date.format("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ;
+if(obj.checkin.status == json.checkin){
+	if(json.checkin){
+		jsonBuilder.checkin(
+		        "userName": obj.checkin.userName ,
+   				"userId": obj.checkin.userId,
+                "date": obj.checkin.date ,
+                "status": json.checkin,
+                "type" : "checkin" 
+                );	
+                }else{
+					jsonBuilder.checkin(
+                		"userName": "" ,
+   						"userId": "",
+                		"date": dateF ,
+                		"status": json.checkin,
+                		"type" : "checkin"
+                	);
+                
+                }
+                               
+   }else{
+      if(json.checkin){
+    	jsonBuilder.checkin(
+                "userName": "valter.gomes " ,
+   				"userId": "dsfgsdf",
+                "date": dateF ,
+                "status": json.checkin,
+                "type" : "checkin"
+                ); 
+                }else{
+                	jsonBuilder.checkin(
+                		"userName": "" ,
+   						"userId": "",
+                		"date": dateF ,
+                		"status": json.checkin,
+                		"type" : "checkin"
+                	);
+                }
+}
+
+return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<logger message="saiu #[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/solicitations:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": payload.solicitation,
+                "modelId" : flowVars['adId']
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addSolicitations/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="post:/customer:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="json" value="#[payload]"
+			doc:name="json" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign" path="/customers/"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="teste #[payload]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[json.id = payload.id
+
+return json;]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/channel:application/json:api-config">
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Copy_of_Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def objChannel = muleContext.registry.lookupObject('channelMap').get(payload.channel);
+
+json = [:] ;
+
+json.channel = [:] ;
+
+json.channel.name = objChannel.NOME_ICC ;
+json.channel.modo_envio = objChannel.modo_envio;
+json.channel.id_tipo_envio = objChannel.ID_TIPO_ENVIO;
+json.channel.type = "channel";
+json.channel.contact = [:] ;
+json.channel.contact.type = "contact";
+json.channel.contact.nome = objChannel.RESPONSAVEL ;
+json.channel.contact.email = objChannel.EMAIL_CONFIRMACAO_FTP;
+json.channel.contact.telefone = objChannel.TELEFONE;
+json.channel.contact.endereco = objChannel.ENDERECO;
+
+def jsonBuilder = new groovy.json.JsonBuilder(json);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<logger message="json = #[payload.getClass()]" level="INFO"
+			doc:name="Logger" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			mimeType="application/json" doc:name="Object to JSON" />
+
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<logger message="PASSOUUUUUUUUUUUU" level="INFO" doc:name="Logger" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/files:multipart/form-data:api-config">
+		<set-variable variableName="uploadFile"
+			value="#[message.inboundAttachments['file'].getContent()]" doc:name="uploadFile" />
+
+		<set-variable variableName="filename"
+			value="#[message.inboundAttachments['filename'].getContent()]"
+			doc:name="File Name" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+jsonBuilder(
+	
+	"name" : flowVars.filename 
+	
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_update/addFileCampaign/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="fileReturn" value="#[payload.doc]"
+			doc:name="File Return" />
+		<set-payload value="#[flowVars.uploadFile]" doc:name="Set Payload" />
+		<set-variable variableName="filePath"
+			value="C:\go_images\#[flowVars.campaignId]\#[flowVars.fileReturn.id]\original"
+			doc:name="filePath" />
+
+		<file:outbound-endpoint
+			path="C:\go_images\#[flowVars.campaignId]\#[flowVars.fileReturn.id]\original"
+			outputPattern="#[flowVars.filename]" connector-ref="output"
+			responseTimeout="10000" doc:name="File" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[File f = new File("C:/go_images/"+ flowVars.campaignId+"/"+flowVars.fileReturn.id+"/thumb");
+						f.mkdirs(); 
+						f = new File("C:/go_images/"+ flowVars.campaignId+"/"+flowVars.fileReturn.id+"/normalizado");
+						f.mkdirs();
+			]]></scripting:script>
+		</scripting:component>
+		<remove-variable variableName="uploadFile" doc:name="Remove uploadFile" />
+		<flow-ref name="hotFolder_sender" doc:name="hotFolder" />
+
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[flowVars.fileReturn]" doc:name="Set Payload" />
+
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="hotFolder_sender" initialState="started"
+		processingStrategy="synchronous">
+		<set-variable variableName="hostProcessorPath" value="/var/tmp/go_images"
+			doc:name="Host Processor Path" />
+		<set-variable variableName="host_ip" value="192.168.0.103"
+			doc:name="Host IP" />
+		<set-variable variableName="host_port" value="22"
+			doc:name="host port" />
+		<component class="br.go.conections.SCPClient" doc:name="Java" />
+
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/files/{fileId}:application/json:api-config">
+		<set-payload
+			value="{&#xD;&#xA;    &#xD;&#xA;    &quot;name&quot;: &quot;teste&quot;,&#xD;&#xA;    &quot;anotations&quot;: &quot;Veiculacao na primeira pagi&quot;&#xD;&#xA;   &#xD;&#xA;}"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/files/{fileId}/thumbs:multipart/form-data:api-config">
+		<set-payload value="#[message.inboundAttachments['file']]"
+			doc:name="Set Payload" />
+		<set-variable variableName="filename"
+			value="#[message.inboundAttachments['filename'].getContent()]"
+			doc:name="File Name" />
+		<set-variable variableName="filepath"
+			value="campaigns/#[flowVars.campaignId]/files/#[flowVars.fileId]/thumb/#[flowVars.filename]"
+			doc:name="File Path" />
+		<file:outbound-endpoint
+			path="C:\go_images\#[flowVars.campaignId]\#[flowVars.fileId]\thumb\"
+			outputPattern="#[flowVars.filename]" connector-ref="output"
+			responseTimeout="10000" doc:name="File" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+jsonBuilder(
+	
+	"thumb" : flowVars.filepath 
+	
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_update/fileUpdateCampaign/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="fileId" value="#[flowVars['fileId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="payload : #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/history:application/json:api-config">
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="Valter.Gomes"
+			doc:name="userName" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": userName,
+                "modelId" : flowVars['campaignId'],
+                "action" : payload.action ,
+                "before" : payload.before ,
+                "now" : payload.now
+                
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addHistory/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="historyType" value="campaign" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file:multipart/form-data:api-config">
+		<set-payload value="#[message.inboundAttachments['file']]"
+			doc:name="Set Payload" />
+		<set-variable variableName="filename"
+			value="#[message.inboundAttachments['filename'].getContent()]"
+			doc:name="File Name" />
+		<set-variable variableName="filepath"
+			value="campaigns/#[flowVars.campaignId]/jobs/#[flowVars.jobId]/ads/#[flowVars.adId]/file"
+			doc:name="File Path" />
+		<logger message="#[flowVars.filename]" level="INFO" doc:name="Logger" />
+		<file:outbound-endpoint
+			path="C:\go_images\#[flowVars.campaignId]\jobs\#[flowVars.jobId]\ads\#[flowVars.adId]\original"
+			outputPattern="#[flowVars.filename]" connector-ref="output"
+			responseTimeout="10000" doc:name="File" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<http:request config-ref="API_Local" path="/engine/normalizador/jobs/12"
+			method="POST" doc:name="HTTP" />
+		<object-to-string-transformer doc:name="Object to String" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+jsonBuilder(
+	
+	"_id" : payload ,
+	"fullPath" : "C:\\go_images\\" + flowVars.campaignId + "\\jobs\\"+ flowVars.jobId + "\\ads\\" + flowVars.adId + "\\original\\" + flowVars.filename
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign" path="/normalizador_ids"
+			method="POST" doc:name="HTTP" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+jsonBuilder.file(
+	
+	"name" : flowVars.filename ,
+	"path" : flowVars.filepath
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/adUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc.file]" doc:name="Set Payload" />
+		<logger message="payload : #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/thumb:multipart/form-data:api-config">
+		<set-payload value="#[message.inboundAttachments['file']]"
+			doc:name="Set Payload" />
+		<set-variable variableName="filename"
+			value="#[message.inboundAttachments['filename'].getContent()]"
+			doc:name="File Name" />
+		<set-variable variableName="filepath"
+			value="campaigns/#[flowVars.campaignId]/jobs/#[flowVars.jobId]/ads/#[flowVars.adId]/file/thumb/#[flowVars.filename]"
+			doc:name="File Path" />
+		<logger message="#[flowVars.filename]" level="INFO" doc:name="Logger" />
+		<file:outbound-endpoint
+			path="C:\go_images\#[flowVars.campaignId]\jobs\#[flowVars.jobId]\ads\#[flowVars.adId]\"
+			outputPattern="#[flowVars.filename]" connector-ref="output"
+			responseTimeout="10000" doc:name="File" />
+		<set-payload value="{}" doc:name="Set Payload" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder();
+def subj = new groovy.json.JsonBuilder();
+jsonBuilder(
+	
+	
+	"thumb" : flowVars.filepath
+
+                                            
+);
+return  jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/fileAdUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+				<http:query-param paramName="adId" value="#[flowVars['adId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="payload : #[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/history:application/json:api-config">
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="Valter.Gomes"
+			doc:name="userName" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": userName,
+                "modelId" : flowVars['adId'],
+                "action" : payload.action ,
+                "before" : payload.before ,
+                "now" : payload.now ,
+               
+                
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addHistory/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="historyType" value="advertisement" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/notifications:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": payload.notification,
+                "modelId" : flowVars['adId']
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addNotifications/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="advertisement" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/file:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/jobUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="jobId" value="#[flowVars['jobId']]" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/history:application/json:api-config">
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<set-variable variableName="userName" value="Valter.Gomes"
+			doc:name="userName" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": userName,
+                "modelId" : flowVars['jobId'],
+                "action" : payload.action ,
+                "before" : payload.before ,
+                "now" : payload.now ,
+                
+                
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addHistory/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="historyType" value="jobs" />
+
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/jobs/{jobId}/notifications:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+		jsonBuilder(
+		                "name": payload.notification,
+		                "modelId" : flowVars['jobId']
+		                  
+		)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addNotifications/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="jobs" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<logger message="apos gravar #[payload]" level="INFO" doc:name="Logger" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow name="get:/campaigns/{campaignId}/notifications:api-config">
+		<set-payload
+			value="{&#xD;&#xA;&#x9;&quot;id&quot;: 123,&#xD;&#xA;    &quot;name&quot;: &quot;a sample campaign1&quot;,&#xD;&#xA;    &quot;agency&quot;: &quot;Red Chili&quot;,&#xD;&#xA;    &quot;client&quot;: &quot;Nextel&quot;,&#xD;&#xA;    &quot;timeFrame&quot;: &quot;2015-03-17T18:25:43-05:00&quot;,&#xD;&#xA;    &quot;status&quot;: &quot;work-in-progress&quot;,&#xD;&#xA;&#x9;&quot;jobs&quot;: []&#xD;&#xA;}"
+			doc:name="Set Payload" />
+		<http:request config-ref="campaign"
+			path="campaigns/_design/campaign/_view/byID" method="GET" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="key"
+					value="&quot;#[flowVars.campaignId]&quot;" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.rows[0].value.notifications]"
+			doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="post:/campaigns/{campaignId}/notifications:application/json:api-config">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "name": payload.notification,
+                "modelId" : flowVars['campaignId']
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/addNotifications/#[flowVars['campaignId']]"
+			method="PUT" doc:name="HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="campaign" />
+
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/notifications/{notificationId}/visualized:application/json:api-config"
+		initialState="started">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/updateNotification/#[flowVars['campaignId']]"
+			method="PUT" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="campaign" />
+				<http:query-param paramName="notId"
+					value="#[flowVars['notificationId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/notifications/{notificationId}/visualized:application/json:api-config"
+		initialState="started">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/updateNotification/#[flowVars['campaignId']]"
+			method="PUT" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="jobs" />
+				<http:query-param paramName="notId"
+					value="#[flowVars['notificationId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+	<flow
+		name="put:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/notifications/{notificationId}/visualized:application/json:api-config"
+		initialState="started">
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/updateNotification/#[flowVars['campaignId']]"
+			method="PUT" doc:name="Copy_of_HTTP">
+			<http:request-builder>
+				<http:query-param paramName="notType" value="advertisement" />
+				<http:query-param paramName="notId"
+					value="#[flowVars['notificationId']]" />
+			</http:request-builder>
+		</http:request>
+		<object-to-string-transformer doc:name="Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Logger" />
+		<set-payload value="#[payload]" doc:name="Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Message Properties" />
+	</flow>
+
+	<flow name="post:/campaigns/{campaignId}/files/{fileId}/thumbs:api-config">
+		<set-payload value="#[NullPayload.getInstance()]"
+			doc:name="Set Payload" />
+	</flow>
+	<flow
+		name="GET:/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{type}/{filename}">
+		<http:listener config-ref="api-httpListenerConfig"
+			path="/campaigns/{campaignId}/jobs/{jobId}/ads/{adId}/file/{type}/{filename}"
+			doc:name="HTTP" />
+
+		<set-variable variableName="campaignId"
+			value="#[message.inboundProperties['http.uri.params'].get('campaignId')] "
+			doc:name="campaignId" />
+		<set-variable variableName="adId"
+			value="#[message.inboundProperties['http.uri.params'].get('adId')] "
+			doc:name="adId" />
+		<set-variable variableName="type"
+			value="#[message.inboundProperties['http.uri.params'].get('type')] "
+			doc:name="type" />
+		<set-variable variableName="filename"
+			value="#[message.inboundProperties['http.uri.params'].get('filename')] "
+			doc:name="filename" />
+		<set-variable variableName="jobId"
+			value="#[message.inboundProperties['http.uri.params'].get('jobId')] "
+			doc:name="jobId" />
+
+
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def host = "C:/go_images/" ;
+def jobsFolder = "/jobs/" ;
+def adsFolder = "/ads/" ;
+def campaign = flowVars.campaignId;
+def job = flowVars.jobId;
+def ad = flowVars.adId;
+if((flowVars.type.trim() == "thumb".trim())){
+	filename = flowVars.filename.replace(".pdf" , ".jpg")
+}else{
+		filename = flowVars.filename;
+	}
+def barra = "/";
+def folder = flowVars.type;
+
+
+println host.trim() + barra.trim() + campaign.trim() + barra.trim() + jobsFolder.trim() + barra.trim() + job.trim() + barra.trim() +adsFolder.trim() + barra.trim() + ad.trim() + barra.trim()+ folder.trim()  + barra.trim()+ filename.trim();
+return new FileInputStream(host.trim() + barra.trim() + campaign.trim() + barra.trim() + jobsFolder.trim() + barra.trim() + job.trim() + barra.trim() +adsFolder.trim() + barra.trim() + ad.trim() + barra.trim()+ folder.trim()  + barra.trim()+ filename.trim() );]]></scripting:script>
+		</scripting:component>
+		<choice doc:name="Choice">
+			<when expression="flowVars.type.trim() ==&quot;thumb&quot;">
+				<message-properties-transformer
+					mimeType="image/jpeg" doc:name="image jpg" />
+			</when>
+			<otherwise>
+				<message-properties-transformer
+					mimeType="binary/octet-stream" doc:name="PDF Download" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="GET:/campaigns/{campaignId}/files/{fileId}/{type}/{filename}">
+		<http:listener config-ref="api-httpListenerConfig"
+			path="/campaigns/{campaignId}/files/{fileId}/{type}/{filename}"
+			doc:name="HTTP" />
+		<set-variable variableName="campaignId"
+			value="#[message.inboundProperties['http.uri.params'].get('campaignId')] "
+			doc:name="Copy_of_campaignId" />
+		<set-variable variableName="fileId"
+			value="#[message.inboundProperties['http.uri.params'].get('fileId')] "
+			doc:name="Copy_of_fileId" />
+		<set-variable variableName="filename"
+			value="#[message.inboundProperties['http.uri.params'].get('filename')] "
+			doc:name="Copy_of_filename" />
+		<set-variable variableName="type"
+			value="#[message.inboundProperties['http.uri.params'].get('type')] "
+			doc:name="type" />
+		<logger message="#[flowVars.type]" level="INFO" doc:name="Logger" />
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def host = "C:/go_images/" ;
+def campaign = flowVars.campaignId;
+def file = flowVars.fileId;
+def filename = null ;
+if((flowVars.type.trim() == "thumb".trim())){
+	filename = flowVars.filename.replace(".pdf" , ".jpg")
+}else{
+		filename = flowVars.filename;
+	}
+
+def barra = "/";
+def folder = flowVars.type;
+
+return new FileInputStream(host.trim() + barra.trim() + campaign.trim() + barra.trim() + file.trim() + barra.trim() +folder.trim() + barra.trim() + filename.trim());;]]></scripting:script>
+		</scripting:component>
+		<choice doc:name="Choice">
+			<when expression="flowVars.type.trim() ==&quot;thumb&quot;">
+				<message-properties-transformer
+					mimeType="image/jpeg" doc:name="image jpg" />
+			</when>
+			<otherwise>
+				<message-properties-transformer
+					mimeType="binary/octet-stream" doc:name="PDF Download" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="GET:/engine/normalizador/jobs/{jobId}">
+		<http:listener config-ref="api-httpListenerConfig"
+			path="/engine/normalizador/jobs/{jobId}" allowedMethods="GET"
+			doc:name="HTTP" />
+        <response>
+            <set-payload value="teste" doc:name="Set Payload"/>
+        </response>
+
+
+
+
+
+
+
+
+
+
+
+
+
+		<logger message="GET" level="INFO" doc:name="Logger" />
+	</flow>
+	<flow name="POST:/engine/normalizador/jobs/{jobId}">
+		<http:listener config-ref="api-httpListenerConfig"
+			path="/engine/normalizador/jobs/{jobId}" allowedMethods="POST"
+			doc:name="HTTP" />
+		<logger level="INFO" message="#[payload.getClass()]" doc:name="Logger" />
+		<scripting:component doc:name="JavaScript">
+			<scripting:script engine="JavaScript"><![CDATA[valor =  (Math.random() * 101) ;
+valor.toFixed(0);
+
+
+]]></scripting:script>
+		</scripting:component>
+		<object-to-string-transformer doc:name="Object to String" />
+
+		<logger message="#[payload]" level="INFO" doc:name="Logger" />
+	</flow>
+	<flow name="delete:/campaigns/{campaignId}:api-config">
+		<scripting:component doc:name="Groovy">
+			<scripting:script engine="Groovy"><![CDATA[def jsonBuilder = new groovy.json.JsonBuilder()
+jsonBuilder(
+                "status": "cancelado"
+                
+                  
+)
+ return jsonBuilder.toPrettyString();]]></scripting:script>
+		</scripting:component>
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<http:request config-ref="campaign"
+			path="/campaigns/_design/campaign/_update/campaignUpdate/#[flowVars['campaignId']]"
+			method="POST" doc:name="Copy_of_HTTP" />
+		<object-to-string-transformer doc:name="Copy_of_Object to String" />
+		<json:json-to-object-transformer
+			returnClass="java.util.HashMap" doc:name="Copy_of_JSON to Object" />
+		<logger message="ref #[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<set-payload value="#[payload.doc]" doc:name="Copy_of_Set Payload" />
+		<logger message="#[payload]" level="INFO" doc:name="Copy_of_Logger" />
+		<flow-ref name="getFunctions" doc:name="Copy_of_getFunctions" />
+		<json:object-to-json-transformer
+			doc:name="Copy_of_Object to JSON" />
+		<message-properties-transformer
+			mimeType="application/json" doc:name="Copy_of_Message Properties" />
+	</flow>
+
+</mule>

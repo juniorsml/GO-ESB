@@ -1,0 +1,7 @@
+- bater schemas contra examples
+- montar a lista de todas as funções
+- montar objetos com exemplo de lista de funçoes 
+- montar tela de login , cadastro de user , agencia e funçoes em objetos
+- procurar o cara  de react
+- montar email para o anuj
+- implementar o back  

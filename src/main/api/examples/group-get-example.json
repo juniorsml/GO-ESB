@@ -1,0 +1,18 @@
+{
+   "_id": "53fd223a87e9cf52347a847b34002d59",
+   "_rev": "1-c12f35fc197628eb1e2d2f4acb8b768f",
+   "type": "group",
+   "groupName": "agency",
+   "functions": [
+       {
+           "label": "create advertisement",
+           "url": "/campaigns/{id}/jobs/{id}/ads",
+           "method": "POST"
+       },
+       {
+           "label": "get allAdvertisements",
+           "url": "/campaigns/{id}/jobs/{id}/ads",
+           "method": "GET"
+       }
+   ]
+}

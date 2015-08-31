@@ -1,0 +1,242 @@
+{
+    "_id": "5787bcb0142d72f9e984293837092de3",
+    "_rev": "101-167f68f63cc817689bfcc28460e267b0",
+    "type": "campaign",
+    "userName": "valter.gomes",
+    "name": "a sample Campaign",
+    "agency": "Red Chili",
+    "costumer": "Nextel",
+    "jobNum": "123456",
+    "status": "aberto",
+    "timeFrame": "2015-03-17T18:25:43-05:00",
+    "createdAt": "2015-03-17T18:25:43-05:00",
+    "annotations": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus tincidunt scelerisque ipsum, id posuere nulla vulputate sed. Phasellus aliquam lacinia posuere. Curabitur convallis egestas eros, id lacinia sem. Quisque eleifend ac enim ut bibendum. Quisque laoreet dui elit",
+    "notifications": {
+        "campaign": [
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            },
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            }
+        ],
+        "job": [
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            },
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            }
+        ],
+        "advertisement": [
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            },
+            {
+                "id": "sadfsdfdsf",
+                "type": "notification",
+                "name": "edit name",
+                "date": "2015-03-17T18:25:43-05:00"
+            }
+        ]
+    },
+    "history": {
+        "campaign": [
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            }
+        ],
+        "job": [
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            }
+        ],
+        "advertisement": [
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            },
+            {
+                "type": "history",
+                "userName": "Valter Gomes",
+                "date": "2015-03-17T18:25:43-05:00",
+                "action": "Date Modified",
+                "before": "13/02/2015",
+                "now": "20/02/2015"
+            }
+        ]
+    },
+    "files": [
+        {
+            "type": "file",
+            "path": "/teste/teste",
+            "name": "teste",
+            "dateUpload": "2015-03-17T18:25:43-05:00",
+            "extension": "pdf",
+            "height": "210",
+            "width ": "270",
+            "anotations": "Veiculacao na primeira pagi",
+            "size": "6mb"
+        },
+        {
+            "type": "file",
+            "path": "/teste/teste",
+            "name": "teste",
+            "dateUpload": "2015-03-17T18:25:43-05:00",
+            "extension": "pdf",
+            "height": "210",
+            "width ": "270",
+            "anotations": "Veiculacao na primeira pagi",
+            "size": "6mb"
+        }
+    ],
+    "jobs": [
+        {
+            "type": "job",
+            "id": 1,
+            "formato": "210x227",
+            "baseFile": {
+                "type": "file",
+                "path": "/teste/teste",
+                "name": "teste",
+                "dateUpload": "2015-03-17T18:25:43-05:00",
+                "extension": "pdf",
+                "height": "210",
+                "width ": "270",
+                "anotations": "Veiculacao na primeira pagi",
+                "size": "6mb"
+            },
+            "status": "aberto",
+            "annotations": "dsfsfsadfsadfdsfffffffffffffffffffadsfadsf",
+            "advertisements": [
+                {
+                    "type": "advertisement",
+                    "ap": "132dsad",
+                    "dateDelivery": "2015-03-17T18:25:43-05:00",
+                    "datePublication": "2015-03-17T18:25:43-05:00",
+                    "checkin": {
+                        "userName": "valter.gomes",
+                        "userID": "fdsfdlçsf5654",
+                        "date": "2015-03-17T18:25:43-05:00",
+                        "status": true
+                    },
+                    "channel": {
+                        "type": "channel",
+                        "name": "Estadão",
+                        "id": "1",
+                        "contact": {
+                            "type": "contact",
+                            "nome": "teste",
+                            "email": "teste@teste.com.br",
+                            "address": "fdsafdsfdsaf",
+                            "phone": "953603146"
+                        },
+                        "sendMode": "FTP"
+                    },
+                    "file": {
+                        "type": "file",
+                        "path": "/teste/teste",
+                        "name": "teste",
+                        "dateUpload": "2015-03-17T18:25:43-05:00",
+                        "extension": "pdf",
+                        "height": "210",
+                        "width ": "270",
+                        "anotations": "Veiculacao na primeira pagi",
+                        "size": "6mb"
+                    },
+                    "status": "modified",
+                    "dispatch": {
+                        "userName": "valter.junior",
+                        "userID": "1231",
+                        "date": "2015-03-17T18:25:43-05:00",
+                        "status": "enviado"
+                    },
+                    "id": 0,
+                    "solicitations": [
+                        {
+                            "id": "0",
+                            "type": "solicitation",
+                            "name": "PRINT",
+                            "date": "2015-03-17T18:25:43-05:00"
+                        },
+                        {
+                            "id": "1",
+                            "type": "solicitation",
+                            "name": "PRINT",
+                            "date": "2015-03-17T18:25:43-05:00"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

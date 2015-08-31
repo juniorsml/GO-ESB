@@ -1,0 +1,32 @@
+  # Global
+  - message-error: !include message-error-canonical.json
+    
+  # Measurement Scale  
+  - measurement-scale: !include measurement-scale-canonical.json
+  - measurement-scale-request: !include measurement-scale-request-canonical.json
+  - measurement-scale-response: !include measurement-scale-response-canonical.json
+  - measurement-scales-response: !include measurement-scales-response-canonical.json   
+ 
+  # Evaluation  
+  - evaluation: !include evaluation-canonical.json
+  - evaluation-request: !include evaluation-request-canonical.json
+  - evaluation-response: !include evaluation-response-canonical.json
+  - evaluations-response: !include evaluations-response-canonical.json    
+
+  # Qualifications
+  - qualification: !include qualification-canonical.json
+  - qualification-request: !include qualification-request-canonical.json
+  - qualification-response: !include qualification-response-canonical.json
+  - qualifications-response: !include qualifications-response-canonical.json
+
+  # Careers
+  - career: !include career-canonical.json
+  - career-request: !include career-request-canonical.json
+  - career-response: !include career-response-canonical.json
+  - careers-response: !include careers-response-canonical.json
+
+  # People
+  - person: !include person-canonical.json
+  - person-request: !include person-request-canonical.json
+  - person-response: !include person-response-canonical.json
+  - people-response: !include people-response-canonical.json

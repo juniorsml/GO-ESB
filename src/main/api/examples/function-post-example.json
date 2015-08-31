@@ -1,0 +1,5 @@
+{
+               "label": "update campaignFileThumb",
+               "url": "/campaigns/{id}/files/{id}/thumb",
+               "method": "PUT"
+           }

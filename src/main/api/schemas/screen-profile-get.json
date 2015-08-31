@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-03/schema#",
+  "id": "screenProfiles",
+  "type": "object",
+  "properties": {
+    "type": {
+      "id": "type",
+      "type": "string",
+      "required" : true
+    },
+    "name": {
+      "id": "name",
+      "type": "string",
+      "required" : true
+    },
+    "profile": {
+      "id": "profile",
+      "type": "string",
+      "required" : true
+    },
+    "actions": {
+      "id": "actions",
+      "type": "array",
+      "required" : true ,
+      "items": [ ]
+    },
+    "show": {
+      "id": "show",
+      "type": "array",
+      "required" : true ,
+      "items": [   ]
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+    "required": true,
+    "additionalProperties":false,
+    "properties": {
+        "agency": {
+            "type": "string",
+            "id": "http://jsonschema.net/agency",
+            "default": "",
+            "required": true
+        },"agency": {
+            "type": "string",
+            "id": "http://jsonschema.net/agency",
+            "default": "",
+            "required": true
+        },
+        "annotations": {
+            "type": "string",
+            "id": "http://jsonschema.net/annotations",
+            "default": "",
+            "required": true
+        },
+        "costumer": {
+            "type": "string",
+            "id": "http://jsonschema.net/costumer",
+            "default": "",
+            "required": true
+        },
+       
+        
+        "jobNum": {
+            "type": "string",
+            "id": "http://jsonschema.net/jobNum",
+            "default": "",
+            "required": true
+        },
+       
+        "name": {
+            "type": "string",
+            "id": "http://jsonschema.net/name",
+            "default": "new campaign",
+            "required": true
+        },
+       
+        "timeFrame": {
+            "type": "string",
+            "id": "http://jsonschema.net/timeFrame",
+            "default": "",
+            "required": true
+        },
+        "userName": {
+            "type": "string",
+            "id": "http://jsonschema.net/userName",
+            "default": "User",
+            "required": true
+        }
+    }
+}

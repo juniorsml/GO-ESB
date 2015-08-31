@@ -1,0 +1,9 @@
+{
+	"type" : "screenProfiles" , 
+	"name" : "campaign detail" , 
+	"profile" : "agency" ,
+	"actions" :  ["createJob" , "editJob" , "uploadFile" , "fileDetail" , "simpledownloadFile", "save" , "Cancel"],
+	"show" : ["campaignInfo" , "JobsList" , "FilesList" ]
+
+
+}

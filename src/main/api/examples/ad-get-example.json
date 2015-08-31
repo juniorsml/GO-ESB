@@ -1,0 +1,70 @@
+{
+    "type": "advertisement",
+    "ap": "132dsad",
+    "dateDelivery": "2015-03-17T18:25:43-05:00",
+    "datePublication": "2015-03-17T18:25:43-05:00",
+    "functions": [
+        {
+            "label": "create advertisement",
+            "url": "/campaigns/{id}/jobs/{id}/ads",
+            "method": "POST"
+        },
+        {
+            "label": "get allAdvertisements",
+            "url": "/campaigns/{id}/jobs/{id}/ads",
+            "method": "GET"
+        }
+    ],
+    "checkin": {
+        "userName": "valter.gomes",
+        "userID": "fdsfdlçsf5654",
+        "date": "2015-03-17T18:25:43-05:00",
+        "status": true
+    },
+    "channel": {
+        "type": "channel",
+        "name": "Estadão",
+        "id": "1",
+        "contact": {
+            "type": "contact",
+            "nome": "teste",
+            "email": "teste@teste.com.br",
+            "address": "fdsafdsfdsaf",
+            "phone": "953603146"
+        },
+        "sendMode": "FTP"
+    },
+    "file": {
+        "type": "file",
+        "path": "/teste/teste",
+        "name": "teste",
+        "dateUpload": "2015-03-17T18:25:43-05:00",
+        "extension": "pdf",
+        "height": "210",
+        "width ": "270",
+        "anotations": "Veiculacao na primeira pagi",
+        "size": "6mb"
+    },
+    "status": "modified",
+    "sent": {
+        "userName": "valter.junior",
+        "userID": "1231",
+        "date": "2015-03-17T18:25:43-05:00",
+        "status": "enviado"
+    },
+    "id": 0,
+    "solicitations": [
+                        {
+                            "id": "0",
+                            "type": "solicitation",
+                            "name": "PRINT",
+                            "date": "2015-03-17T18:25:43-05:00"
+                        },
+                        {
+                            "id": "1",
+                            "type": "solicitation",
+                            "name": "PRINT",
+                            "date": "2015-03-17T18:25:43-05:00"
+                        }
+                    ]
+}

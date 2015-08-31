@@ -1,0 +1,15 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+	"additionalProperties":false,
+    "required": true,
+    "properties": {
+        "channel": {
+            "type": "string",
+            "id": "http://jsonschema.net/id",
+            "default": "1",
+            "required": true
+        }
+    }
+}

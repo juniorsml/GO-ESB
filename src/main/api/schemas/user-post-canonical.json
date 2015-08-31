@@ -1,0 +1,54 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+    "additionalProperties": false,
+    "required": true,
+    "properties": {
+          "name": {
+            "type": "string",
+            "id": "http://jsonschema.net/name",
+            "required": true
+        },
+        "lastName": {
+            "type": "string",
+            "id": "http://jsonschema.net/lastName",
+            "required": true
+        },
+          "email": {
+            "type": "string",
+            "id": "http://jsonschema.net/email",
+            "required": true
+        },
+        "agencyId": {
+            "type": "string",
+            "id": "http://jsonschema.net/agencyId",
+            "required": true
+        },
+        "agencyName": {
+            "type": "string",
+            "id": "http://jsonschema.net/agencyName",
+            "required": true
+        },
+        "groupId": {
+            "type": "string",
+            "id": "http://jsonschema.net/group",
+            "required": true
+        },
+        "profile": {
+            "type": "string",
+            "id": "http://jsonschema.net/profile",
+            "required": true
+        },
+        "login": {
+            "type": "string",
+            "id": "http://jsonschema.net/login",
+            "required": true
+        },
+        "password": {
+            "type": "string",
+            "id": "http://jsonschema.net/password",
+            "required": true
+        }
+    }
+}

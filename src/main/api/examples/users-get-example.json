@@ -1,0 +1,44 @@
+[
+    {
+        "id": "dfsdafads",
+        "type": "user",
+        "agency": "sdafasdf",
+        "profile": "agency",
+        "actions": [
+            "createJob",
+            "editJob",
+            "uploadFile",
+            "fileDetail",
+            "simpledownloadFile",
+            "save"
+        ]
+    },
+    {
+        "id": "dfsdafads",
+        "type": "user",
+        "agency": "sdafasdf",
+        "profile": "agency",
+        "actions": [
+            "createJob",
+            "editJob",
+            "uploadFile",
+            "fileDetail",
+            "simpledownloadFile",
+            "save"
+        ]
+    },
+    {
+        "id": "dfsdafads",
+        "type": "user",
+        "agency": "sdafasdf",
+        "profile": "agency",
+        "actions": [
+            "createJob",
+            "editJob",
+            "uploadFile",
+            "fileDetail",
+            "simpledownloadFile",
+            "save"
+        ]
+    }
+]

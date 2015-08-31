@@ -1,0 +1,27 @@
+- permissionRequired:
+   displayName: permissionRequired
+   queryParameters:
+    agencyId:
+	  type: integer
+	  required: false
+	  # not required, because when profile='arizona', 
+	  # the admin may be interested in looking at campaigns across all agencies
+	profile:
+	  description: the profile used to log in to the Go portal
+	  # could be replaced by a profileId as an integer
+	  type: string
+	  required: true
+	   
+- paged:
+  displayName: paged
+  queryParameters:
+   offset:
+    example: ?offset=10
+    displayName: offset
+    description: Set the init register to return
+    type: string
+   limit:
+    example: ?limit=5
+    displayName: limit
+    description: Max number os registers to return
+    type: string

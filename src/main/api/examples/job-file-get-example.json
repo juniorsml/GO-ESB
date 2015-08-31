@@ -1,0 +1,12 @@
+{	
+	"id" : 1,
+    "type": "file",
+    "path": "/teste/teste",
+    "name": "teste",
+    "dateUpload": "2015-03-17T18:25:43-05:00",
+    "extension": "pdf",
+    "height": "210",
+    "width ": "270",
+    "anotations": "Veiculacao na primeira pagi",
+    "size": "6mb"
+}

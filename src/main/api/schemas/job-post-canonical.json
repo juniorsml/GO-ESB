@@ -1,0 +1,28 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+    "required": true,
+	"additionalProperties":false,
+    "properties": {
+       
+        "annotations": {
+            "type": "string",
+            "id": "http://jsonschema.net/annotations",
+            "default": "dsfsfsadfsadfdsfffffffffffffffffffadsfadsf",
+            "required": false
+        },
+        "baseFile": {
+            "type": "number",
+            "id": "http://jsonschema.net/baseFile",
+            "required": false
+        },
+        "formato": {
+            "type": "string",
+            "id": "http://jsonschema.net/formato",
+            "default": "210x227",
+            "required": false
+        }
+        
+    }
+}

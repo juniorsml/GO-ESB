@@ -1,0 +1,8 @@
+ {
+ 	"type" : "contact" ,
+	"nome": "teste",
+    "email": "teste@teste.com.br",
+    "address": "fdsafdsfdsaf",
+    "phone": "953603146"
+   }
+

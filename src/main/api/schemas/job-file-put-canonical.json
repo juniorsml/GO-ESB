@@ -1,0 +1,20 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+    "required": true,
+    "properties": {
+        "anotations": {
+            "type": "string",
+            "id": "http://jsonschema.net/anotations",
+            "default": "Veiculacao na primeira pagi",
+            "required": false
+        },
+        "name": {
+            "type": "string",
+            "id": "http://jsonschema.net/name",
+            "default": "teste",
+            "required": false
+        }
+    }
+}

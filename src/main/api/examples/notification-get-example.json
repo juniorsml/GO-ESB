@@ -1,0 +1,9 @@
+{
+	"id":123, 
+	"changeDescription": "Modified job base file",
+	"notificationOnObjectType": "job", 
+	"objectId": 123456789, 
+	"timestamp": "Feb 27, 2015 10:31:49 AM"
+}
+
+:  When a user (Arizona admin or agency user) makes a change on what on campaign, job or advertisement. Add notification object which links to different levels in the hierarchy model. TBD

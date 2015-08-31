@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans xmlns="http://www.springframework.org/schema/beans" 
+ 	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:couchdb="http://www.ektorp.org/schema/couchdb"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
+	http://www.ektorp.org/schema/couchdb http://www.ektorp.org/schema/couchdb/couchdb.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">  
+	
+	
+
+	
+	<context:component-scan base-package="br.com.arizona" />
+
+	
+	
+	<bean id="httpClient" class="org.ektorp.spring.HttpClientFactoryBean" />
+
+	<util:properties id="couchdbProperties" location="classpath:/couchdb.properties"/>
+	<couchdb:instance id="couchDB"  url="http://localhost:5984" properties="couchdbProperties"/>
+	<couchdb:database name="testeDB" instance-ref="couchDB" />
+	<couchdb:database name="users" instance-ref="couchDB" />
+
+	<bean id="groupDatabase" class="org.ektorp.impl.StdCouchDbConnector">
+		<constructor-arg value="groups" />
+		<constructor-arg>
+			<bean id="couchDbInstance" class="org.ektorp.impl.StdCouchDbInstance">
+				<constructor-arg ref="httpClient"/>
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="functionDatabase" class="org.ektorp.impl.StdCouchDbConnector">
+		<constructor-arg value="functions" />
+		<constructor-arg>
+			<bean id="couchDbInstance" class="org.ektorp.impl.StdCouchDbInstance">
+				<constructor-arg ref="httpClient"/>
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	
+	
+	<bean id="campaignDatabase" class="org.ektorp.impl.StdCouchDbConnector">
+		<constructor-arg value="campaigns" />
+		<constructor-arg>
+			<bean id="couchDbInstance" class="org.ektorp.impl.StdCouchDbInstance">
+				<constructor-arg ref="httpClient"/>
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="statusModelDatabase" class="org.ektorp.impl.StdCouchDbConnector">
+		<constructor-arg value="status_model" />
+		<constructor-arg>
+			<bean id="couchDbInstance" class="org.ektorp.impl.StdCouchDbInstance">
+				<constructor-arg ref="httpClient"/>
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+</beans>

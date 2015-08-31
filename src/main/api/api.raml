@@ -1,0 +1,1440 @@
+#%RAML 0.8
+
+title: Arizona GO Project API
+baseUri: http://localhost:8081/api/v1
+version: 1.0
+documentation:
+  - title: Arizona GO Project
+    content: |
+      Arizona Advertising Campaign API Manager
+ 
+traits:
+ - permissionRequired:
+     displayName: permissionRequired
+     queryParameters:
+      agencyId:
+        type: String
+        required: false
+        # not required, because when profile='arizona', 
+        # the admin may be interested in looking at campaigns across all agencies
+      profile:
+        description: the profile used to log in to the Go portal
+        # could be replaced by a profileId as an integer
+        type: string
+        required: true
+    
+ - paged:
+    displayName: paged
+    queryParameters:
+     offset:
+      example: ?offset=10
+      displayName: offset
+      description: Set the init register to return
+      type: string
+     limit:
+      example: ?limit=5
+      displayName: limit
+      description: Max number os registers to return
+      type: string
+           
+
+                         
+/campaigns:
+    displayName: Campaigns
+    description: Retrieves a list of campaigns, filtered (by agencya and profile) and with pagination           
+    get:
+      is: [ paged , permissionRequired ]
+      responses:
+        200:
+          description: |
+            Campaigns retrieved successfully
+          body:
+            application/json:
+              schema: !include schemas/go-project-schema.json
+              example: !include examples/campaigns-get-example.json                   
+    post:
+      is: [ permissionRequired ]
+      description: Create a New Campaign
+      body:
+        application/json:
+          schema: !include schemas/campaign-post-canonical.json
+          example: !include examples/campaign-post-example.json
+      responses:
+        200:
+          description: Success Campaign Created
+          body:
+            application/json:
+              example: examples/campaign-get-example.json                   
+                                                    
+    
+    /{campaignId}:
+      displayName: Get a single Campaign by Id
+      description: A specific campaign, a member of the campaigns collection
+      get:
+        is: [ permissionRequired ]  
+        responses:
+          200:
+            description: |
+              Campaign retrieved successfully
+            body:
+              application/json:
+                schema: !include schemas/go-project-schema.json
+                example: !include examples/campaign-get-example.json
+                
+    
+      put:
+        description: Update Campaign
+        body:
+          application/json:
+            schema: !include schemas/campaign-put-canonical.json
+            example: !include examples/campaign-put-example.json
+        responses:
+          200:
+            description: |
+              Updated Campaign
+            body:
+              application/json:
+                example: examples/campaign-put-example.json
+                
+      delete:
+        description: delete Campaign
+        body:
+          application/json:
+        responses:
+          200:
+            description: |
+              Updated Campaign
+            body:
+              application/json:
+                example: examples/campaign-get-example.json
+    
+      /history:
+        post:
+          description:  Create a History Campaign  
+          body:
+            application/json:
+              schema: !include schemas/campaign-history-post-canonical.json
+              example: !include examples/campaign-history-post-example.json
+          responses:
+            200:
+              description: Create a history from one action in campaign
+              body:
+                application/json:
+                  example: examples/campaign-history-post-example.json
+                       
+        get:
+          is : [permissionRequired , paged]      
+          responses:
+            200:
+              description: |
+                Campaigns retrieved successfully
+              body:
+                application/json:
+                  schema: !include schemas/go-project-schema.json
+                  example: !include examples/campaign-history-get-example.json        
+      /status:
+        put:
+          description: Update Status Campaign
+          body:
+            application/json:
+              schema: !include schemas/campaign-status-put-canonical.json
+              example: !include examples/campaign-status-put-example.json
+          responses:
+            200:
+              description: Campaign status changed
+              body:
+                application/json:
+                  example: examples/campaign-status-put-example.json
+            
+                  
+      /files:
+        post:
+          description: Upload file content for a campaign                    
+          body:
+            binary/octet-stream:
+            multipart/form-data:
+              formParameters:
+                file:
+                  description: The file to be uploaded
+                  required: true
+                  type: file
+                  #example: !include examples/baseFileSample.pdf
+                filename:
+                 description: Name of the file uploaded
+                 type: string
+                 example: arquivo.jpg
+          responses: 
+           200: 
+            body: 
+             application/json: 
+              example: !include  examples/campaign-file-get-example.json       
+        
+        get:
+           is : [ permissionRequired , paged]          
+           responses:
+              200:
+                description: |
+                  Campaigns retrieved successfully
+                body:
+                  application/json:
+                    schema: !include schemas/go-project-schema.json
+                    example: !include examples/campaign-files-get-example.json 
+               
+                     
+        /thumbs:
+          get:
+            is : [ permissionRequired ]  
+            body:
+              binary/octet-stream:
+              multipart/form-data:
+                formParameters:
+                  file:
+                    description: The file to be uploaded
+                    required: true
+                    type: file
+                    #example: !include examples/baseFileSample.pdf
+            responses: 
+             200: 
+              body: 
+               application/json: 
+                example: !include  examples/campaign-file-get-example.json     
+               
+                 
+                 
+                   
+                   
+         
+                   
+        /{fileId}:
+          get:
+            description: Get one file information
+            is : [ permissionRequired ]            
+            responses:
+              200:
+                description: |
+                  Campaign file retrieved successfully
+                body:
+                  application/json:
+                    schema: !include schemas/go-project-schema.json
+                    example: !include examples/campaign-file-get-example.json
+                 
+          post:
+            description: Upload a new file to a campaign
+            body:
+              application/json:
+                example: !include examples/campaign-file-post-example.json
+            responses:
+              200:
+                description: |
+                  Request Acknowledged
+                body:
+                  application/json:
+                    example: !include examples/campaign-file-post-example.json       
+          
+          delete:
+            description: Remove a file from a campaign
+            body:
+              application/json:
+            responses:
+              200:
+                description: Remove a file from campaign
+                body:
+                  application/json:
+                    example: |
+                      {
+                        "fileid":"1",
+                        "message" : "removed" 
+                       }       
+          
+          put:
+            description: update file to a campaign
+            body:
+              application/json:
+                example: !include examples/campaign-file-put-example.json
+            responses:
+              200:
+                description: update a file information 
+                body:
+                  application/json:
+                    example: examples/campaign-file-get-example.json       
+                 
+          /thumbs:
+            get:
+              description: Get one file information
+              queryParameters:
+              is : [ permissionRequired , paged]            
+              responses:
+                200:
+                  
+                     
+                             
+            post:
+              description: |
+                 create a thumb to the file 
+                 Use the "binary/octet-stream" content type to specify the content from any consumer (excepting web-browsers).
+                 Use the "multipart-form/data" content type to upload a file which content will become the file-content
+              body:  
+                binary/octet-stream:
+                multipart/form-data:
+                    formParameters:
+                      file:
+                        description: The file to be uploaded
+                        required: true
+                        type: file
+                        #example: !include examples/baseFileSample.pdf
+              responses: 
+                 200: 
+                  body: 
+                   application/json: 
+                    example: !include  examples/campaign-file-get-example.json   
+            delete:
+              description: Upload a new file to a campaign
+              body:
+                application/json:
+              responses:
+                200:
+                  description: |
+                    Remove thumb success
+                  body:
+                    application/json:
+                      example: |
+                        {
+                          "fileId": "1"
+                          "status": "Removed"
+                        }       
+            
+            put:
+              description: |
+                 replace a thumb to the file 
+                 Use the "binary/octet-stream" content type to specify the content from any consumer (excepting web-browsers).
+                 Use the "multipart-form/data" content type to upload a file which content will become the file-content
+              body:
+                binary/octet-stream:
+                multipart/form-data:
+                  formParameters:
+                    file:
+                      description: The file to be uploaded
+                      required: true
+                      type: file     
+                              
+                
+          /download:
+            get:
+              description: Get one file information
+              is : [ permissionRequired ]  
+              queryParameters:
+                fileType:
+                  description: normalized ou ISO
+              responses:
+                200:
+                  body:
+                    binary/octet-stream:
+          
+      /notifications:
+           get:
+            is : [ permissionRequired , paged]            
+            responses:
+              200:
+                description: |
+                  Campaigns notification retrieved successfully
+                body:
+                  application/json:
+                    schema: !include schemas/go-project-schema.json
+                    example: !include examples/campaign-notifications-get-example.json
+           post:
+              description: Create a new notification
+              body:
+                application/json:
+                  schema:  !include schemas/campaign-notification-post-canonical.json
+                  example: !include examples/campaign-notification-post-example.json
+              responses:
+                200:
+                  description: |
+                    Create notifications
+                  body:
+                    application/json:
+                      example: !include examples/campaign-notifications-get-example.json 
+           delete:
+              description: Remove notification
+              body:
+                application/json:
+              responses:
+                200:
+                  description: |
+                    Notification Removed
+                  body:
+                    application/json:
+                      example: |
+                        {
+                          "notificationId": 121 ,
+                          "message" : "notification removed"
+                        }       
+            
+           put:
+              description: Update notification
+              body:
+                application/json:
+                  schema:  !include schemas/campaign-notification-post-canonical.json
+                  example: !include examples/campaign-notification-post-example.json
+              responses:
+                200:
+                  description: |
+                    Update notifications
+                  body:
+                    application/json:
+                      example: !include examples/campaign-notifications-get-example.json
+           /{notificationId}: 
+              /visualized:
+                 put:
+                  description: Update notification into a Job
+                  body:
+                    application/json:
+                      schema:  !include schemas/campaign-notification-put-canonical.json
+                      example: !include examples/campaign-notification-put-example.json
+                  responses:
+                    200:
+                      description: |
+                        Update notifications
+                      body:
+                        application/json:
+                          
+                          example: !include examples/campaign-notifications-get-example.json
+             
+      /jobs:
+        displayName: Jobs
+        description: A collection of jobs within a specific campaign
+        get:      
+         is : [permissionRequired , paged]
+         responses:
+          200:
+            description: |
+              Jobs retrieved successfully
+            body:
+              application/json:
+                example: !include examples/jobs-get-example.json
+        post:
+          description: New Job
+          body:
+            application/json:
+              schema: !include schemas/job-post-canonical.json
+              example: !include examples/job-post-example.json
+          responses:
+            200:
+              description: 
+                 Job retrieved successfully
+              body:
+                application/json:
+                  example: !include examples/job-get-example.json                   
+        /{jobId}:
+          displayName: getJob
+          description: A specific job, a member of the jobs collection
+          get:      
+            responses:
+              200:
+                description: |
+                  Job retrieved successfully
+                body:
+                  application/json:
+                    example: !include examples/job-get-example.json
+                    
+          put:      
+           body: 
+            application/json: 
+              schema: !include schemas/job-put-canonical.json
+              example: !include examples/job-put-example.json
+           responses:
+              200:
+                description: |
+                  Job update successfully
+                body:
+                  application/json:
+                    example: !include examples/job-get-example.json
+                       
+                    
+          /status:
+            put: 
+              description: Changes Job Status
+              body:
+               application/json: 
+                schema: !include  schemas/job-status-put-canonical.json
+                example: !include examples/job-status-put-example.json
+              responses:
+                200:
+                  description: |
+                    Job status changed successfully
+                  body:
+                    application/json:
+                      schema: !include schemas/job-status-put-canonical.json
+                      example: !include examples/job-get-example.json
+          /history:
+            description: job history
+            post:
+              description:  Job history create
+              body:
+                application/json:
+                  schema: !include schemas/job-history-post-canonical.json
+                  example: !include examples/campaign-history-post-example.json
+              responses:
+                200:
+                  description: |
+                    Job history created
+                  body:
+                    application/json:
+                      example: examples/job-history-post-example.json
+                           
+            get:
+              is : [paged , permissionRequired]          
+              responses:
+                200:
+                  description: |
+                    Campaigns retrieved successfully
+                  body:
+                    application/json:
+                      schema: !include schemas/go-project-schema.json
+                      example: !include examples/job-history-get-example.json  
+                      
+          /file:
+            get:
+                description: Get one file information
+                is : [ permissionRequired]        
+                responses:
+                  200:
+                    description: |
+                      Campaign file retrieved successfully
+                    body:
+                      application/json:
+                        schema: !include schemas/go-project-schema.json
+                        example: !include examples/job-file-get-example.json
+                     
+            post:
+                description: Link one of campaign's file to job
+                body:
+                  application/json:
+                    schema: !include schemas/job-file-post-canonical.json
+                    example: !include examples/job-file-post-example.json
+                responses:
+                  200:
+                    description: Link one of campaign's file to job
+                    body:
+                      application/json:
+                        example: !include examples/job-file-post-example.json       
+              
+            delete:
+                description: Upload a new file to a campaign
+                body:
+                  application/json:
+                responses:
+                  200:
+                    description: Remove the linked file from job
+                    body:
+                      application/json:
+                        example: |
+                          {
+                            "fileid":"1",
+                            "message" : "removed" 
+                           }       
+              
+            put:
+                description: Link another file to a job
+                body:
+                  application/json:
+                    example: !include examples/campaign-file-put-example.json
+                responses:
+                  200:
+                    description: Link another file to a job
+                    body:
+                      application/json:
+                        example: examples/job-file-put-example.json      
+            /thumb:
+              get:
+                description: Get one stream of thumb file uploaded into campaign
+                is : [permissionRequired]     
+                responses:
+                  200:
+                   body:
+                      binary/octet-stream:
+            /download:
+               get:
+                description: Get one stream of thumb file uploaded into campaign
+                is : [permissionRequired]   
+                responses:
+                  200:
+                   body:
+                      binary/octet-stream:
+                      
+          /notifications:
+              get:
+                is : [permissionRequired , paged]        
+                responses:
+                  200:
+                    description: Get all notifications from a job
+                    body:
+                      application/json:
+                        schema: !include schemas/go-project-schema.json
+                        example: !include examples/campaign-notifications-get-example.json
+              post:
+                  description: Create a new notification
+                  body:
+                    application/json:
+                      schema:  !include schemas/campaign-notification-post-canonical.json
+                      example: !include examples/campaign-notification-post-example.json
+                  responses:
+                    200:
+                      description: |
+                        Created notification into a job
+                      body:
+                        application/json:
+                          example: !include examples/notification-get-example.json 
+              delete:
+                  description: Remove notification from a Job
+                  body:
+                    application/json:
+                  responses:
+                    200:
+                      description: |
+                        Removed notification from a Job
+                      body:
+                        application/json:
+                          example: |
+                            {
+                              "notificationId": 121 ,
+                              "message" : "notification removed"
+                            }       
+                
+              /{notificationId}: 
+                /visualized:
+                 put:
+                  description: Update notification into a Job
+                  body:
+                    application/json:
+                      schema:  !include schemas/campaign-notification-put-canonical.json
+                      example: !include examples/campaign-notification-put-example.json
+                  responses:
+                    200:
+                      description: |
+                        Update notifications
+                      body:
+                        application/json:
+                          
+                          example: !include examples/campaign-notifications-get-example.json
+                                          
+          /ads:
+            displayName: Ads
+            description: Retrieves a list of ads, filtered (by agency and job) and with pagination           
+            get:
+              is : [permissionRequired , paged]    
+              responses:
+                200:
+                  description: |
+                    Ads retrieved successfully
+                  body:
+                    application/json:
+                      schema: !include schemas/go-project-schema.json
+                      example: !include examples/ads-get-example.json                   
+            post:
+              description: Create a New Ad
+              body:
+                application/json:
+                  schema: !include schemas/ad-post-canonical.json
+                  example: !include examples/ad-post-example.json
+              responses:
+                200:
+                  description: Success Ad Created
+                  body:
+                    application/json:
+                      example: examples/ad-get-example.json                   
+            /{adId}:
+              displayName: getAd
+              description: A specific ad, a member of the ads collection
+              get:
+                is : [permissionRequired , paged]      
+                responses:
+                  200:
+                    description: |
+                      Ad retrieved successfully
+                    body:
+                      application/json:
+                        example: !include examples/ad-get-example.json
+              put:      
+                description: update ad
+                body:
+                    application/json:
+                      schema: !include schemas/ad-put-canonical.json
+                      example: !include examples/ad-put-example.json
+                responses:
+                  200:
+                    description: |
+                      Ad updated successfully
+                    body:
+                      application/json:
+                        example: !include examples/ad-get-example.json
+                                        
+              /history: 
+                post:
+                    description:  Campaign history create
+                    body:
+                      application/json:
+                        schema: !include schemas/ad-history-post-canonical.json
+                        example: !include examples/ad-history-post-example.json
+                    responses:
+                      200:
+                        description: Campaign history created
+                        body:
+                          application/json:
+                            example: examples/ad-history-post-example.json
+                                 
+                get:
+                    is : [ permissionRequired , paged]          
+                    responses:
+                      200:
+                        description: |
+                          Campaigns retrieved successfully
+                        body:
+                          application/json:
+                            schema: !include schemas/go-project-schema.json
+                            example: !include examples/ad-history-get-example.json
+                                       
+              /checkin:
+               displayName: User start to follow this AD
+               description: alter status of a ads
+               post:
+                description:  User start to follow this AD
+                body:
+                  application/json:
+                    schema: !include schemas/ad-checkin-post-canonical.json
+                    example: !include examples/ad-checkin-post-example.json
+                responses:
+                  200:
+                    description: User gave check to follow this AD
+                    body:
+                      application/json:
+                        example: !include examples/ad-checkin-post-example.json
+              /status: 
+               put:
+                description: Change ad status
+                body:
+                  application/json:
+                    schema: !include schemas/ad-status-put-canonical.json
+                    example: !include examples/ad-status-put-example.json
+                responses:
+                  200:
+                    description: Change ad status
+                    body:
+                      application/json:
+                        example: examples/ad-status-put-example.json
+            
+                        
+              
+              /channel:
+                displayName: getAd
+                description: A specific ad, a member of the ads collection
+                get: 
+                  is : [permissionRequired ]        
+                  responses:
+                    200:
+                      description: |
+                        Ad retrieved successfully
+                      body:
+                        application/json:
+                          example: !include examples/ad-channel-get-example.json
+                post:      
+                  description: update channel ad
+                  body:
+                      application/json:
+                        schema: !include schemas/ad-channel-post-canonical.json
+                        example: !include examples/ad-channel-post-example.json
+                  responses:
+                    200:
+                      description: |
+                        Ad channel updated successfully
+                      body:
+                        application/json:
+                          example: !include examples/ad-channel-get-example.json
+                delete:
+                  description: Remove ad channel
+                  responses:
+                    200:
+                      description: |
+                        Remove ad channel
+                      body:
+                        application/json:
+                          example: |
+                            {
+                              "channelName" : "Estadão",
+                              "status": "removed"
+                            }       
+                
+                put:
+                  description: Update channel into a Ad
+                  body:
+                    application/json:
+                      schema: !include schemas/ad-channel-put-canonical.json
+                      example: !include examples/ad-channel-put-example.json
+                  responses:
+                    200:
+                      description: Channel Updated
+                      body:
+                        application/json:
+                          example: examples/ad-channel-get-example.json
+                
+              /solicitations:          
+               displayName: create solicitation
+               description: create solicitation
+               post:
+                body: 
+                 application/json: 
+                  schema : !include schemas/ad-solicitation-post-canonical.json
+                  example: !include examples/ad-solicitation-post-example.json
+                responses:
+                  200:
+                    description: |
+                     Create Solicitation to ads
+                    body:
+                      application/json:
+                        example: !include examples/ad-solicitation-get-example.json  
+               get:
+                is : [ permissionRequired , paged] 
+                responses:
+                  200:
+                    description: |
+                      Solicitation retrieved successfully
+                    body:
+                      application/json:
+                        example: !include examples/ad-solicitation-get-example.json 
+              /dispatch:
+               displayName: dispatch 
+               description: dispatch status
+               put:
+                description: Update dispatch
+                body: 
+                 application/json: 
+                  schema: !include schemas/ad-dispatch-put-canonical.json
+                  example: !include examples/ad-dispatch-put-example.json
+                responses:
+                  200:
+                    description: |
+                      Alter dispatch
+                    body:
+                      application/json:
+                        example: !include examples/ad-dispatch-put-example.json  
+               get:
+                is : [permissionRequired] 
+                responses:
+                  200:
+                    description: |
+                      Dispatch retrieved successfully
+                    body:
+                      application/json:
+                        example: !include examples/ad-dispatch-get-example.json  
+              /notifications:
+                get:
+                  is : [permissionRequired, paged]           
+                  responses:
+                    200:
+                      description: |
+                        Campaigns retrieved successfully
+                      body:
+                        application/json:
+                          schema: !include schemas/go-project-schema.json
+                          example: !include examples/campaign-notifications-get-example.json
+                post:
+                    description: Create a new notification
+                    body:
+                      application/json:
+                        schema:  !include schemas/ad-notification-post-canonical.json
+                        example: !include examples/ad-notification-post-example.json
+                    responses:
+                      200:
+                        description: |
+                          Create notifications
+                        body:
+                          application/json:
+                            example: !include examples/ad-notifications-get-example.json 
+                delete:
+                    description: Remove notification
+                    responses:
+                      200:
+                        description: |
+                          notification removed
+                        body:
+                          application/json:
+                            example: |
+                              {
+                                "notificationId": 121 ,
+                                "message" : "notification removed"
+                              }       
+                  
+                put:
+                    description: Update notification
+                    body:
+                      application/json:
+                        schema:  !include schemas/ad-notification-post-canonical.json
+                        example: !include examples/ad-notification-post-example.json
+                    responses:
+                      200:
+                        description: |
+                          Update notifications
+                        body:
+                          application/json:
+                            example: !include examples/campaign-notifications-get-example.json
+                              
+              /file:
+                  post:
+                    description: Upload file content for a campaign                    
+                    body:
+                      binary/octet-stream:
+                      multipart/form-data:
+                        formParameters:
+                          file:
+                            description: The file to be uploaded
+                            required: true
+                            type: file
+                            #example: !include examples/baseFileSample.pdf
+                          filename:
+                           description: Name of the file uploaded
+                           type: string
+                           example: arquivo.jpg
+                    responses: 
+                     200: 
+                      body: 
+                       application/json: 
+                        example: !include  examples/campaign-file-get-example.json       
+                  
+                  get:
+                     is : [ permissionRequired , paged]          
+                     responses:
+                        200:
+                          description: |
+                            Campaigns retrieved successfully
+                          body:
+                            application/json:
+                              schema: !include schemas/go-project-schema.json
+                              example: !include examples/campaign-files-get-example.json 
+                  put:
+                      description: update file to a campaign
+                      body:
+                        application/json:
+                          example: !include examples/campaign-file-put-example.json
+                      responses:
+                        200:
+                          description: update a file information 
+                          body:
+                            application/json:
+                              example: examples/campaign-file-get-example.json 
+                         
+                               
+                  /thumb:
+                    post:
+                      description: Upload file content for a campaign                    
+                      body:
+                        binary/octet-stream:
+                        multipart/form-data:
+                          formParameters:
+                            file:
+                              description: The file to be uploaded
+                              required: true
+                              type: file
+                              #example: !include examples/baseFileSample.pdf
+                            filename:
+                             description: Name of the file uploaded
+                             type: string
+                             example: arquivo.jpg
+                      responses: 
+                       200: 
+                        body: 
+                         application/json: 
+                          example: !include  examples/campaign-file-get-example.json      
+                         
+                           
+                    delete:
+                      description: Remove a file from a campaign
+                      body:
+                        application/json:
+                      responses:
+                        200:
+                          description: Remove a file from campaign
+                          body:
+                            application/json:
+                              example: |
+                                {
+                                  "fileid":"1",
+                                  "message" : "removed" 
+                                 }       
+                    
+                    put:
+                      description: update file to a campaign
+                      body:
+                        application/json:
+                          example: !include examples/campaign-file-put-example.json
+                      responses:
+                        200:
+                          description: update a file information 
+                          body:
+                            application/json:
+                              example: examples/campaign-file-get-example.json       
+                           
+                                        
+                          
+                  /download:
+                    get:
+                      description: Get one file information
+                      is : [ permissionRequired ]  
+                      queryParameters:
+                        fileType:
+                          description: normalized ou ISO
+                      responses:
+                        200:
+                          body:
+                            binary/octet-stream:      
+                              
+/user:
+  displayName: User
+  description: Retrieves a list of users, filtered (by profile) and with pagination 
+  # method only available to 'Arizona' profile          
+  get:
+    is : [permissionRequired , paged]          
+    responses:
+      200:
+        description: |
+          Users retrieved successfully
+        body:
+          application/json:
+            example: !include examples/users-get-example.json  
+                   
+  post:
+    description: New User
+    body:
+      application/json:
+        schema: !include schemas/user-post-canonical.json
+        example: !include examples/user-post-example.json
+    responses:
+      200:
+        description: |
+          User Created
+        body:
+          application/json:
+            example: examples/user-get-example.json
+              
+                      
+  /{userId}:
+    displayName: Contacts
+    description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    get:
+      is : [permissionRequired]        
+      responses:
+        200:
+          description: |
+            User retrieved successfully
+          body:
+            application/json:
+              example: !include examples/user-get-example.json          
+    put:
+      description: Updadte User
+      body:
+        application/json:
+          schema: !include schemas/user-put-canonical.json
+          example: !include examples/user-put-example.json
+      responses:
+        200:
+          description: |
+            User Updated
+          body:
+            application/json:
+              example: examples/user-get-example.json
+    delete:
+      is : [permissionRequired , paged]          
+      responses:
+        200:
+          description: |
+            Delete a user
+          body:
+            application/json:
+              example: !include examples/users-get-example.json                       
+   
+    /status:
+      displayName: User Status
+      put:
+        description: Change user status
+        body:
+          application/json:
+            schema: !include schemas/user-status-put-canonical.json
+            example: !include examples/user-status-put-example.json
+        responses:
+          200:
+            description: |
+               Change user status succed
+            body:
+              application/json:
+                example: |
+                  {
+                    "status": "status changed"
+                  }
+/customer:  
+  displayName: customer
+  get:
+    description: Retrieves a list of customers, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    is : [permissionRequired]          
+    responses:
+      200:
+        description: |
+          customers retrieved successfully
+        body:
+          application/json:
+            example: !include examples/customers-get-example.json           
+  post:
+    description: New Customer
+    body:
+      application/json:
+        schema: !include schemas/customer-post-canonical.json
+        example: !include examples/customer-post-example.json
+    responses:
+      200:
+        description: |
+          Customer Created
+        body:
+          application/json:
+            example: examples/customer-get-example.json
+                      
+  /{customerId}:
+    displayName: customer
+    description: Retrieves a list of customer, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    get:
+      is : [permissionRequired]           
+      responses:
+        200:
+          description: |
+            Contacts retrieved successfully
+          body:
+            application/json:
+              example: !include examples/customer-get-example.json           
+    put:
+      description: Update Customer
+      body:
+        application/json:
+          schema: !include schemas/customer-put-canonical.json
+          example: !include examples/customer-put-example.json
+      responses:
+        200:
+          description: |
+            Update a Specific Customer
+          body:
+            application/json:
+              example: |
+                {
+                  "customerId": 1,
+                  "status": "Updated"
+                }
+    delete:
+      description: Customer Removed
+      responses:
+        200:
+          description: |
+            Romove a Specific Customer
+          body:
+            application/json:
+              example: |
+                {
+                  "customerId": 1,
+                  "status": "Removed"
+                }    
+
+
+
+/channels:
+  displayName: Contacts
+  description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+  # method only available to 'Arizona' profile          
+  get:
+     responses:
+        200:
+          description: |
+            Agencies retrieved successfully
+          body:
+            application/json:
+              schema: !include schemas/go-project-schema.json
+              example: !include examples/agencies-get-example.json 
+  /{idChannel}:  
+    displayName: Contacts
+    description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    get:
+       responses:
+          200:
+            description: |
+              Agencies retrieved successfully
+            body:
+              application/json:
+                schema: !include schemas/go-project-schema.json
+                example: !include examples/agencies-get-example.json
+/agency:
+  displayName: Contacts
+  description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+  # method only available to 'Arizona' profile          
+  get:
+     is : [permissionRequired , paged]          
+     responses:
+        200:
+          description: |
+            Agencies retrieved successfully
+          body:
+            application/json:
+              schema: !include schemas/go-project-schema.json
+              example: !include examples/agencies-get-example.json          
+               
+  post:
+    description: New Agency
+    body:
+      application/json:
+        schema: !include schemas/agency-post-canonical.json
+        example: !include examples/agency-post-example.json
+    responses:
+      200:
+        description: |
+          Agency Created
+        body:
+          application/json:
+            example: examples/agency-get-example.json
+                      
+  /{agencyId}:
+    displayName: Contacts
+    description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    get:
+      is : [permissionRequired , paged]             
+      responses:
+        200:
+          description: |
+            Agency retrieved successfully
+          body:
+            application/json:
+              example: !include examples/agency-get-example.json           
+    put:
+      description: Update Agency
+      body:
+        application/json:
+          schema: !include schemas/agency-put-canonical.json
+          example: !include examples/agency-put-example.json
+      responses:
+        200:
+          description: |
+            Agency Updated
+          body:
+            application/json:
+              example: examples/agency-get-example.json
+    
+    delete:
+      description: Delete Agency
+      body:
+        application/json:
+      responses:
+        200:
+          description: |
+            Agency Removed
+          body:
+            application/json:
+              example: examples/agency-get-example.json  
+                          
+    /contact:
+     put:
+      description: Update Agency
+      body:
+        application/json:
+          schema: !include schemas/agency-contact-put-canonical.json
+          example: !include examples/agency-contact-put-example.json
+      responses:
+        200:
+          description: |
+            Agency Updated
+          body:
+            application/json:
+              example: examples/agency-get-example.json
+    
+    /status:
+      displayName: Contacts
+      description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+      # method only available to 'Arizona' profile          
+                 
+      put:
+        description: Change Status of a Agency
+        body:
+          application/json:
+            schema: !include schemas/agency-status-put-canonical.json
+            example: !include examples/agency-status-put-example.json
+        responses:
+          200:
+            description: |
+              Status Modified
+            body:
+              application/json:
+                example: |
+                  {
+                     "agencyId" : 0
+                    "status": "Modified"
+                  }
+/functions:
+  displayName: Contacts
+  description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+  # method only available to 'Arizona' profile          
+  get:
+     is : [permissionRequired , paged]          
+     responses:
+        200:
+          description: |
+            Agencies retrieved successfully
+          body:
+            application/json:
+               example: !include examples/function-post-example.json          
+               
+  post:
+    description: New Agency
+    body:
+      application/json:
+        schema: !include schemas/function-post-canonical.json
+        example: !include examples/function-post-example.json    
+    responses:
+      200:
+        description: |
+          Agency Created
+        body:
+          application/json:
+            example: examples/function-post-example.jsonn
+                      
+  /{functionId}:
+    displayName: Contacts
+    description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+    # method only available to 'Arizona' profile          
+    get:
+      is : [permissionRequired , paged]             
+      responses:
+        200:
+          description: |
+            Agency retrieved successfully
+          body:
+            application/json:
+              example: !include examples/function-post-example.json          
+    put:
+      description: Update Agency
+      body:
+        application/json:
+          schema: !include schemas/function-post-canonical.json
+          example: !include examples/function-post-example.json
+      responses:
+        200:
+          description: |
+            Agency Updated
+          body:
+            application/json:
+              example: examples/function-post-example.json
+    
+        
+    delete:
+      description: Delete Agency
+      body:
+        application/json:
+      responses:
+        200:
+          description: |
+            Agency Removed
+          body:
+            application/json:
+              example: examples/agency-get-example.json  
+
+
+/login:
+  displayName: Contacts
+  description: Retrieves a list of contacts, filtered (by profile) and with pagination 
+  # method only available to 'Arizona' profile          
+  post:
+   description: Log user in at the plataform
+   body: 
+    application/json: 
+     example:  examples/login-post-example.json
+   responses:
+      200:
+        description: |
+          Contacts retrieved successfully
+        body:
+          application/json:
+            schema: !include schemas/login-post-canonical.json
+            example: !include examples/login-post-example.json           
+  delete:
+    description: New Contact
+    responses:
+      200:
+        description: |
+          Request Acknowledged
+        body:
+          application/json:
+            example: |
+              {
+                "userName" : "valter.gomes"
+                "status": "Log out"
+              }
+/go:
+  /admin:
+    /screen:
+      /{screenName}:
+        /roles:
+          displayName: user permission by screen
+          description: control user acess based in user profile
+          get:
+            responses:
+             200:
+              description: 
+               Request Acknowledged
+              body:
+               application/json:
+                 schema:  !include schemas/go-project-schema.json  
+                 example: !include examples/screen-profile-get.json
+    /groups:
+      displayName: User groups
+      description: Groups contens list of functions to control user access
+      get:
+       description: get all groups
+       responses: 
+        200:
+         body: 
+          application/json: 
+           example: !include examples/groups-get-example.json
+      post:
+       description: create a new group
+       body: 
+        application/json: 
+         example: !include examples/group-post-example.json
+         schema: !include schemas/group-post-canonical.json
+       responses: 
+        200:
+         body: 
+          application/json: 
+           example: !include examples/group-get-example.json
+      /{idGroup}:
+        get:
+         description: Get one group from the group collection
+         responses:      
+           200:
+             body: 
+              application/json: 
+               example: !include examples/group-get-example.json   
+        put:  
+         description: update a group
+         body: 
+          application/json: 
+           example: !include examples/group-put-example.json
+           schema: !include schemas/group-put-canonical.json
+         responses: 
+          200:
+           body: 
+            application/json: 
+             example: !include examples/group-get-example.json       
+        delete:
+         description: remove one group from the group collection
+         responses:      
+           200:
+             body: 
+              application/json: 
+                example: !include examples/group-get-example.json
+                 
+

@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+	"additionalProperties":false,
+    "required": true,
+    "properties": {
+        "status": {
+            "type": "string",
+            "id": "http://jsonschema.net/status",
+            "default": "aberto",
+			"enum" : ["aguardando arquivo" , "produzindo" , "processando" , "erro no processamento" , 
+						"aguardando aprovacao" , "alertas de preflight","enviando" , "aguardando confirmacao", "erro no envio" , "confirmado" ],
+            "required": true
+        }
+    }
+}

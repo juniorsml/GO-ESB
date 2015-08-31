@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-03/schema",
+    "id": "http://jsonschema.net",
+    "additionalProperties": false,
+    "required": false,
+    "properties": {
+        "functions": {
+            "type": "array",
+            "id": "http://jsonschema.net/functions",
+            "required": false,
+            "items": {
+                "type": "string",
+                "id": "http://jsonschema.net/functions/0",
+                "required": false
+            }
+        },
+        "groupName": {
+            "type": "string",
+            "id": "http://jsonschema.net/groupName",
+            "required": false
+        }
+    }
+}
